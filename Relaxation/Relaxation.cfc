@@ -171,7 +171,6 @@ component
 	**/
 	private struct function translateConfig( required any Config ) {
 		/* Deal with different types of configs passed in. */
-		//return {};
 		
 		if ( isStruct(arguments.Config) ) {
 			/* It's already a struct. Return it. */
@@ -188,7 +187,7 @@ component
 		}
 		if ( !fileExists(arguments.Config) ) {
 			/* Throw error */
-			
+			throw( type="Relaxation.Config.InvalidPath", message="I could not find a file at the path you supplied. [#arguments.Config#]");
 		}
 		return DeserializeJSON(trim(fileRead(arguments.Config)));
 	}

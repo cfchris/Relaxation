@@ -51,6 +51,46 @@ component extends="mxunit.framework.TestCase" {
 	}
 	
 	/**
+	* @hint "I test all of the different styles of Config args."
+	* @output false
+	**/
+	public void function different_config_types_should_work() {
+		makePublic(variables.RestFramework,"translateConfig");
+		/* Test with the non-expanded path. */
+		var config = variables.RestFramework.translateConfig( variables.ConfigPath );
+		assertIsStruct(config);
+		assertIsStruct(config.RequestPatterns);
+		assertTrue(structKeyExists(config.RequestPatterns,"/product"),"The (/product) resource was not defined in the config.");
+		//debug(config);
+		/* Test with the expanded path. */
+		var config = variables.RestFramework.translateConfig( expandPath(variables.ConfigPath) );
+		assertIsStruct(config);
+		assertIsStruct(config.RequestPatterns);
+		assertTrue(structKeyExists(config.RequestPatterns,"/product"),"The (/product) resource was not defined in the config.");
+		/* Test with a JSON string. */
+		var config = variables.RestFramework.translateConfig( fileRead(expandPath(variables.ConfigPath)) );
+		assertIsStruct(config);
+		assertIsStruct(config.RequestPatterns);
+		assertTrue(structKeyExists(config.RequestPatterns,"/product"),"The (/product) resource was not defined in the config.");
+		/* Test with a struct. */
+		var config = variables.RestFramework.translateConfig( getFrameworkConfig() );
+		assertIsStruct(config);
+		assertIsStruct(config.RequestPatterns);
+		assertTrue(structKeyExists(config.RequestPatterns,"/product"),"The (/product) resource was not defined in the config.");
+	}
+	
+	/**
+	* @hint "I test that a valid exception is thrown if an invalid config is supplied."
+	* @output false
+	**/
+	public void function expect_invalidpath_config_exception() {
+		expectException("Relaxation.Config.InvalidPath");
+		makePublic(variables.RestFramework,"translateConfig");
+		/* Test with a BAD path. */
+		var config = variables.RestFramework.translateConfig( "/THIS/BAD/PATH" );
+	}
+	
+	/**
 	* @hint "I test findResourceConfig in the positive sense."
 	* @output false
 	**/
@@ -120,35 +160,6 @@ component extends="mxunit.framework.TestCase" {
 		assertEquals(true, result.Success);
 		assertTrue(isJSON(result.Output),"Shoot result was not JSON.");
 		assertTrue(FindNoCase("Relaxation REST Framework",result.Output),"Part of the JSON string that should be there IS NOT.");
-	}
-	
-	/**
-	* @hint "I test all of the different styles of Config args."
-	* @output false
-	**/
-	public void function different_config_types_should_work() {
-		makePublic(variables.RestFramework,"translateConfig");
-		/* Test with the non-expanded path. */
-		var config = variables.RestFramework.translateConfig( variables.ConfigPath );
-		assertIsStruct(config);
-		assertIsStruct(config.RequestPatterns);
-		assertTrue(structKeyExists(config.RequestPatterns,"/product"),"The (/product) resource was not defined in the config.");
-		//debug(config);
-		/* Test with the expanded path. */
-		var config = variables.RestFramework.translateConfig( expandPath(variables.ConfigPath) );
-		assertIsStruct(config);
-		assertIsStruct(config.RequestPatterns);
-		assertTrue(structKeyExists(config.RequestPatterns,"/product"),"The (/product) resource was not defined in the config.");
-		/* Test with a JSON string. */
-		var config = variables.RestFramework.translateConfig( fileRead(expandPath(variables.ConfigPath)) );
-		assertIsStruct(config);
-		assertIsStruct(config.RequestPatterns);
-		assertTrue(structKeyExists(config.RequestPatterns,"/product"),"The (/product) resource was not defined in the config.");
-		/* Test with a struct. */
-		var config = variables.RestFramework.translateConfig( getFrameworkConfig() );
-		assertIsStruct(config);
-		assertIsStruct(config.RequestPatterns);
-		assertTrue(structKeyExists(config.RequestPatterns,"/product"),"The (/product) resource was not defined in the config.");
 	}
 	
 	/*
