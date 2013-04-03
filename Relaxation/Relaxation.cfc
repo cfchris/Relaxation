@@ -14,12 +14,14 @@ component
 	* @hint "I initialize the object and get the routing all setup."
 	* @output false
 	**/
-	public component function init( required struct Config ) {
+	public component function init( required any Config ) {
+		/* Deal with different types of configs passed in. */
+		arguments.Config = translateConfig( arguments.Config );
 		/* Set the Return Format. Default JSON. */
 		variables.Config.ReturnFormat = isDefined("arguments.Config.ReturnFormat") ? arguments.Config.ReturnFormat : 'JSON';
 		/* Get the pattern matching for resources setup. */
 		configureResources( arguments.Config.RequestPatterns );
-		
+		/* Always return the object. */
 		return this;
 	}
 	
@@ -156,6 +158,39 @@ component
 		var methodResult = Invoke(bean, resource.Method, args);
 		result.Output = SerializeJSON(methodResult);
 		return result;
+	}
+	
+	
+	/*
+	 * PRIVATE UTILITY FUNCTIONS
+	 **/
+	 
+	/**
+	* @hint "I will handle any type of config passed in."
+	* @output false
+	**/
+	private struct function translateConfig( required any Config ) {
+		/* Deal with different types of configs passed in. */
+		//return {};
+		
+		if ( isStruct(arguments.Config) ) {
+			/* It's already a struct. Return it. */
+			return arguments.Config;
+		}
+		
+		if ( isJSON(trim(arguments.Config)) ) {
+			/* It's a JSON string. Deserialize and return it. */
+			return DeserializeJSON(trim(arguments.Config));
+		}
+		
+		if ( !fileExists(arguments.Config) && fileExists(expandPath(arguments.Config)) ) {
+			arguments.Config = expandPath(arguments.Config);
+		}
+		if ( !fileExists(arguments.Config) ) {
+			/* Throw error */
+			
+		}
+		return DeserializeJSON(trim(fileRead(arguments.Config)));
 	}
 
 }

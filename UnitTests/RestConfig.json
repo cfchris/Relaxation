@@ -1,0 +1,37 @@
+{
+	"ReturnFormat": "JSON"
+	,"RequestPatterns": {
+		"/product": {
+			"GET": {
+				"Bean": "ProductService"
+				,"Method": "GetAllProducts"
+			}
+			,"POST": {
+				"Bean": "ProductService"
+				,"Method": "SaveProduct"
+			}
+		}
+		,"/product/{ProductID}": {
+			"GET": {
+				"Bean": "ProductService"
+				,"Method": "GetProductByID"
+			}
+			,"POST": {
+				"Bean": "ProductService"
+				,"Method": "SaveProduct"
+			}
+		}
+		,"/product/{ProductID}/colors": {
+			"GET": {
+				"Bean": "ProductService"
+				,"Method": "GetProductColors"
+			}
+		}
+		,"/product/type": {
+			"GET": {
+				"Bean": "ProductService"
+				,"Method": "GetProductTypes"
+			}
+		}
+	}
+}

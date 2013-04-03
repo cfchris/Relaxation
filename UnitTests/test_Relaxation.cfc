@@ -2,7 +2,8 @@ component extends="mxunit.framework.TestCase" {
 
 	/* this will run before every single test in this test case */
 	public void function setUp() {
-		variables.RestFramework = new Relaxation.Relaxation.Relaxation(getFrameworkConfig());
+		variables.ConfigPath = "/Relaxation/UnitTests/RestConfig.json";
+		variables.RestFramework = new Relaxation.Relaxation.Relaxation(variables.ConfigPath);
 	}
 	
 	/* this will run after every single test in this test case */
@@ -17,6 +18,37 @@ component extends="mxunit.framework.TestCase" {
 	/*
 	 * TESTS
 	 **/
+	
+	/**
+	* @hint "I test that the Authorization hook works."
+	* @output false
+	**/
+	public void function authorization_hook_should_work() {
+		variables.RestFramework.setBeanFactory( getBeanFactory() );
+		
+		/* First test without an Authorization Method. */
+		var result = variables.RestFramework.handleRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
+		assertEquals(true, result.Success);
+		
+		/* Second, test with an auth method that WILL authorize. */
+		variables.RestFramework.setAuthorizationMethod(
+			function( struct Resource ) {
+				return true;
+			}
+		);
+		var result = variables.RestFramework.handleRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
+		assertEquals(true, result.Success);
+		
+		/* Third, test with an auth method that WON'T authorize. */
+		variables.RestFramework.setAuthorizationMethod(
+			function( struct Resource ) {
+				return false;
+			}
+		);
+		var result = variables.RestFramework.handleRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
+		assertEquals(false, result.Success);
+		assertEquals("NotAuthorized", result.Error);
+	}
 	
 	/**
 	* @hint "I test findResourceConfig in the positive sense."
@@ -91,36 +123,32 @@ component extends="mxunit.framework.TestCase" {
 	}
 	
 	/**
-	* @hint "I test that the Authorization hook works."
+	* @hint "I test all of the different styles of Config args."
 	* @output false
 	**/
-	public void function authorization_hook_should_work() {
-		variables.RestFramework.setBeanFactory( getBeanFactory() );
-		
-		/* First test without an Authorization Method. */
-		var result = variables.RestFramework.handleRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
-		assertEquals(true, result.Success);
-		
-		/* Second, test with an auth method that WILL authorize. */
-		variables.RestFramework.setAuthorizationMethod(
-			function( struct Resource ) {
-				debug(Resource);
-				return true;
-			}
-		);
-		var result = variables.RestFramework.handleRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
-		assertEquals(true, result.Success);
-		
-		/* Third, test with an auth method that WON'T authorize. */
-		variables.RestFramework.setAuthorizationMethod(
-			function( struct Resource ) {
-				debug(Resource);
-				return false;
-			}
-		);
-		var result = variables.RestFramework.handleRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
-		assertEquals(false, result.Success);
-		assertEquals("NotAuthorized", result.Error);
+	public void function different_config_types_should_work() {
+		makePublic(variables.RestFramework,"translateConfig");
+		/* Test with the non-expanded path. */
+		var config = variables.RestFramework.translateConfig( variables.ConfigPath );
+		assertIsStruct(config);
+		assertIsStruct(config.RequestPatterns);
+		assertTrue(structKeyExists(config.RequestPatterns,"/product"),"The (/product) resource was not defined in the config.");
+		//debug(config);
+		/* Test with the expanded path. */
+		var config = variables.RestFramework.translateConfig( expandPath(variables.ConfigPath) );
+		assertIsStruct(config);
+		assertIsStruct(config.RequestPatterns);
+		assertTrue(structKeyExists(config.RequestPatterns,"/product"),"The (/product) resource was not defined in the config.");
+		/* Test with a JSON string. */
+		var config = variables.RestFramework.translateConfig( fileRead(expandPath(variables.ConfigPath)) );
+		assertIsStruct(config);
+		assertIsStruct(config.RequestPatterns);
+		assertTrue(structKeyExists(config.RequestPatterns,"/product"),"The (/product) resource was not defined in the config.");
+		/* Test with a struct. */
+		var config = variables.RestFramework.translateConfig( getFrameworkConfig() );
+		assertIsStruct(config);
+		assertIsStruct(config.RequestPatterns);
+		assertTrue(structKeyExists(config.RequestPatterns,"/product"),"The (/product) resource was not defined in the config.");
 	}
 	
 	/*
@@ -161,45 +189,7 @@ component extends="mxunit.framework.TestCase" {
 	* @output false
 	**/
 	private struct function getFrameworkConfig() {
-		var config = 
-		{
-			"ReturnFormat": "JSON"
-			,"RequestPatterns": {
-				"/product": {
-					"GET": {
-						"Bean": "ProductService"
-						,"Method": "GetAllProducts"
-					}
-					,"POST": {
-						"Bean": "ProductService"
-						,"Method": "SaveProduct"
-					}
-				}
-				,"/product/{ProductID}": {
-					"GET": {
-						"Bean": "ProductService"
-						,"Method": "GetProductByID"
-					}
-					,"POST": {
-						"Bean": "ProductService"
-						,"Method": "SaveProduct"
-					}
-				}
-				,"/product/{ProductID}/colors": {
-					"GET": {
-						"Bean": "ProductService"
-						,"Method": "GetProductColors"
-					}
-				}
-				,"/product/type": {
-					"GET": {
-						"Bean": "ProductService"
-						,"Method": "GetProductTypes"
-					}
-				}
-			}
-		};
-		return config;
+		return DeserializeJSON(fileRead(expandPath(variables.ConfigPath)));
 	}
 
 }
