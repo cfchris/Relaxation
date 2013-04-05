@@ -161,6 +161,12 @@ component extends="mxunit.framework.TestCase" {
 		assertEquals(true, result.Success);
 		assertTrue(isJSON(result.Output),"Shoot result was not JSON.");
 		assertTrue(FindNoCase("Relaxation REST Framework",result.Output),"Part of the JSON string that should be there IS NOT.");
+		// test empty response
+		result = variables.RestFramework.handleRequest( Path = "/product/do-nothing", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
+		assertIsStruct(result);
+		assertTrue(!StructIsEmpty(result), "Shoot. The return struct is empty.");
+		assertEquals(true, result.Success);
+		assertEquals("", result.Output);
 	}
 	
 	/*
@@ -172,27 +178,33 @@ component extends="mxunit.framework.TestCase" {
 	* @output false
 	**/
 	private any function getBeanFactory() {
-		var bf = 
-			Mock()
-				.getBean('ProductService').returns(
-					{
-						"GetProductByID": function( string ProductID ) {
-							if ( arguments.ProductID == 1 ) {
-								return {
-									"ProductID": 1
-									,"Name": "Relaxation REST Framework"
-									,"DateCreated": "April 1st 2013"
-								};
-							} else {
-								return {
-									"ProductID": ""
-									,"Name": "Undefined"
-									,"DateCreated": ""
-								};
-							}
-						}
+		var bf = Mock();
+		bf.getBean('ProductService').returns(
+			{
+				"GetProductByID": function( string ProductID ) {
+					if ( arguments.ProductID == 1 ) {
+						return {
+							"ProductID": 1
+							,"Name": "Relaxation REST Framework"
+							,"DateCreated": "April 1st 2013"
+						};
+					} else {
+						return {
+							"ProductID": ""
+							,"Name": "Undefined"
+							,"DateCreated": ""
+						};
 					}
-				);
+				}
+			}
+		);
+		bf.getBean('NothingService').returns(
+			{
+				"ReturnNothing": function() {
+					return;	
+				}
+			}
+		);
 		return bf;
 	}
 	
