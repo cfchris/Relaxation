@@ -33,5 +33,11 @@
 				,"Method": "GetProductTypes"
 			}
 		}
+		,"/product/do-nothing": {
+			"GET": {
+				"Bean": "NothingService"
+				,"Method": "ReturnNothing"
+			}
+		}
 	}
 }
