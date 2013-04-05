@@ -142,7 +142,8 @@ component extends="mxunit.framework.TestCase" {
 		assertTrue(!StructIsEmpty(args), "Shoot. The return struct is empty.");
 		assertEquals(URLScope.URLTestArg, args.URLTestArg);
 		assertEquals(FormScope.FormTestArg, args.FormTestArg);
-		assertEquals("bodytestvalue", args.BodyTestArg);
+		assertEquals("bodytestvalue", args.payload.BodyTestArg);
+		assertEquals("AnotherTestValue", args.payload.AnotherArgument);
 		assertEquals(321, args.ProductID);
 		assertEquals("red", args.Color);
 	}

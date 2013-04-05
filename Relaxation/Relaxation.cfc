@@ -60,6 +60,7 @@ component
 			,"Path": ""
 			,"Pattern": ""
 			,"Regex": ""
+			,"Verb": ""
 		};
 		for ( var resource in variables.Config.Resources ) {
 			if ( RefindNoCase(resource.Regex,arguments.Path) ) {
@@ -73,9 +74,10 @@ component
 				result.Error = "VerbNotFound";
 			} else {
 				result.Located = true;
-				result.Regex = match.Regex;
-				result.Pattern = match.Pattern;
 				result.Path = arguments.Path;
+				result.Pattern = match.Pattern;
+				result.Regex = match.Regex;
+				result.Verb = arguments.Verb;
 				StructAppend(result, match[arguments.Verb]);
 			}
 		}
@@ -91,8 +93,9 @@ component
 		/* Coalesce all the sources together. */
 		StructAppend(args, URLScope, false);
 		StructAppend(args, FormScope, false);
-		if ( len(trim(arguments.RequestBody)) && isJSON(arguments.RequestBody) ) {
-			StructAppend(args, DeserializeJSON(arguments.RequestBody), false);
+		if ( len(trim(arguments.RequestBody)) && isJSON(trim(arguments.RequestBody)) ) {
+			/* The request body can be an array or something else that will not StructAppend. So, they are added to the args as "Payload". */
+			args["payload"] = DeserializeJSON(trim(arguments.RequestBody));
 		}
 		/* Get the arguments from the URIs (e.g. /product/321/colors/red/) */
 		if ( ReFindNoCase("[{}]", ResourceMatch.Pattern) ) {
@@ -109,6 +112,14 @@ component
 	}
 	
 	/**
+	* @hint "I return the configuration structure."
+	* @output false
+	**/
+	public struct function getConfig() {
+		return variables.Config;
+	}
+	
+	/**
 	* @hint "I will handle a REST request. Given the requested path and verb, I will call the correct resource and method."
 	* @output false
 	**/
@@ -120,8 +131,8 @@ component
 		if ( isNull(arguments.FormScope) && isDefined("FORM") && isStruct(FORM) ) {
 			arguments.FormScope = FORM;
 		}
-		if ( isNull(arguments.RequestBody) && isJSON(GetHttpRequestData().Content) ) {
-			arguments.RequestBody = GetHttpRequestData().Content;
+		if ( isNull(arguments.RequestBody) && isJSON(trim(ToString(GetHttpRequestData().Content))) ) {
+			arguments.RequestBody = trim(ToString(GetHttpRequestData().Content));
 		}
 		if ( isNull(arguments.Verb) ) {
 			arguments.Verb = CGI.REQUEST_METHOD;
