@@ -167,7 +167,7 @@ component
 		var args = gatherRequestArguments( argumentCollection = arguments, ResourceMatch = resource);
 		/* Now call the method on the bean! */
 		var methodResult = Invoke(bean, resource.Method, args);
-		result.Output = SerializeJSON(methodResult);
+		result.Output = isDefined("methodResult") ? SerializeJSON(methodResult) : "";
 		return result;
 	}
 	
