@@ -3,13 +3,25 @@
 		"/product": {
 			"GET": {
 				"Bean": "ProductService"
-				,"Method": "GetAllProducts"
+				,"Method": "getAllProducts"
+			},
+			"POST": {
+				"Bean": "ProductService"
+				,"Method": "addProduct"
 			}
 		}
 		,"/product/{ProductID}": {
 			"GET": {
 				"Bean": "ProductService"
-				,"Method": "GetProductByID"
+				,"Method": "getProductByID"
+			},
+			"PUT": {
+				"Bean": "ProductService"
+				,"Method": "saveProduct"
+			},
+			"DELETE": {
+				"Bean": "ProductService"
+				,"Method": "deleteProduct"
 			}
 		}
 	}
