@@ -7,6 +7,7 @@ component
 
 	property name="BeanFactory" type="component";
 	property name="AuthorizationMethod" type="any";
+	property name="OnErrorMethod" type="any";
 	
 	variables.Config = {};
 	
@@ -166,7 +167,16 @@ component
 		/* Gather the arguments needed to call the method. */
 		var args = gatherRequestArguments( argumentCollection = arguments, ResourceMatch = resource);
 		/* Now call the method on the bean! */
-		var methodResult = Invoke(bean, resource.Method, args);
+		try {
+			var methodResult = Invoke(bean, resource.Method, args);
+		} catch (Any e) {
+			if ( !isNull(getOnErrorMethod()) ) {
+				var onError = getOnErrorMethod();
+				onError(e, resource, args);
+			} else {
+				rethrow;
+			}
+		}
 		result.Output = isDefined("methodResult") ? SerializeJSON(methodResult) : "";
 		return result;
 	}
