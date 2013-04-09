@@ -124,7 +124,13 @@ component
 	* @hint "I will handle a REST request. Given the requested path and verb, I will call the correct resource and method."
 	* @output false
 	**/
-	public struct function handleRequest( required string Path, string Verb, string RequestBody, struct URLScope, struct FormScope ) {
+	public struct function handleRequest(
+		string Path = CGI.PATH_INFO,
+		string Verb = CGI.REQUEST_METHOD,
+		string RequestBody,
+		struct URLScope,
+		struct FormScope
+	) {
 		/* Try to get reasonable defauls set. */
 		if ( isNull(arguments.URLScope) && isDefined("URL") && isStruct(URL) ) {
 			arguments.URLScope = URL;
@@ -134,9 +140,6 @@ component
 		}
 		if ( isNull(arguments.RequestBody) && isJSON(trim(ToString(GetHttpRequestData().Content))) ) {
 			arguments.RequestBody = trim(ToString(GetHttpRequestData().Content));
-		}
-		if ( isNull(arguments.Verb) ) {
-			arguments.Verb = CGI.REQUEST_METHOD;
 		}
 		var result = {
 			"Success": true

@@ -18,7 +18,7 @@ component output="false" {
 	* @output true
 	**/
 	public void function onRequest() {
-		var result = application.Relaxation.handleRequest( CGI.PATH_INFO );
+		var result = application.Relaxation.handleRequest();
 		getpagecontext().getresponse().setcontenttype('application/json');
 		if ( result.Success ) {
 			writeOutput( result.Output );

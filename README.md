@@ -1,20 +1,20 @@
 Relaxation
 =====
 
+Is building a REST API in ColdFusion stressing you out? You need a little REST and Relaxation.
+
 Relaxation is a REST framework for ColdFusion that helps you build a REST API. And then it gets the heck out of your way.
 
-Is building a REST API stressing you out? You might need a little REST and Relaxation.
-
-Imagine if handling REST requests could be as easy as this:
+With Relaxation, handling REST requests can be as easy as this:
 
 	/* Somewhere in your initialization code */
-	application.Relaxation = new Relaxation.Relaxation( restConfigPath ).setBeanFactory( beanFactory );
+	application.Relaxation = new Relaxation.Relaxation( "./RestConfig.json" ).setBeanFactory( application.BeanFactory );
 	
-	/* In on request start (or wherever) */
-	result = application.Relaxation.handleRequest( CGI.PATH_INFO );
+	/* In onRequest (or wherever) */
+	result = application.Relaxation.handleRequest();
 	writeOutput(result.Output);
 
-There's a little more to it than that. But, I don't want to stress you out.
+There's a little more to it than that. But, I don't want to stress you out. If you want to know more, download the files and poke around the examples. Or whatever. No pressure.
 
 # License
 
