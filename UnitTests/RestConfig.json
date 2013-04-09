@@ -4,39 +4,29 @@
 		"/product": {
 			"GET": {
 				"Bean": "ProductService"
-				,"Method": "GetAllProducts"
-			}
-			,"POST": {
-				"Bean": "ProductService"
-				,"Method": "SaveProduct"
+				,"Method": "getAllProducts"
 			}
 		}
 		,"/product/{ProductID}": {
 			"GET": {
 				"Bean": "ProductService"
-				,"Method": "GetProductByID"
+				,"Method": "getProductByID"
 			}
 			,"POST": {
 				"Bean": "ProductService"
-				,"Method": "SaveProduct"
+				,"Method": "saveProduct"
 			}
 		}
 		,"/product/{ProductID}/colors": {
 			"GET": {
 				"Bean": "ProductService"
-				,"Method": "GetProductColors"
+				,"Method": "getProductColors"
 			}
 		}
-		,"/product/type": {
+		,"/product/do/nothing": {
 			"GET": {
 				"Bean": "ProductService"
-				,"Method": "GetProductTypes"
-			}
-		}
-		,"/product/do-nothing": {
-			"GET": {
-				"Bean": "NothingService"
-				,"Method": "ReturnNothing"
+				,"Method": "returnNothing"
 			}
 		}
 	}

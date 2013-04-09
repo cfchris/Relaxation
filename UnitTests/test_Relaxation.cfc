@@ -4,6 +4,7 @@ component extends="mxunit.framework.TestCase" {
 	public void function setUp() {
 		variables.ConfigPath = "/Relaxation/UnitTests/RestConfig.json";
 		variables.RestFramework = new Relaxation.Relaxation.Relaxation(variables.ConfigPath);
+		variables.RestFramework.setBeanFactory( getBeanFactory() );
 	}
 	
 	/* this will run after every single test in this test case */
@@ -24,7 +25,6 @@ component extends="mxunit.framework.TestCase" {
 	* @output false
 	**/
 	public void function authorization_hook_should_work() {
-		variables.RestFramework.setBeanFactory( getBeanFactory() );
 		
 		/* First test without an Authorization Method. */
 		var result = variables.RestFramework.handleRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
@@ -101,7 +101,7 @@ component extends="mxunit.framework.TestCase" {
 		assertTrue(!StructIsEmpty(match), "Shoot. The return struct is empty.");
 		assertEquals(true, match.located);
 		assertEquals("ProductService", match.Bean);
-		assertEquals("GetProductColors", match.Method);
+		assertEquals("getProductColors", match.Method);
 	}
 	
 	/**
@@ -153,16 +153,15 @@ component extends="mxunit.framework.TestCase" {
 	* @output false
 	**/
 	public void function handleRequest_should_work() {
-		variables.RestFramework.setBeanFactory( getBeanFactory() );
 		var result = variables.RestFramework.handleRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
-		//debug(result);
 		assertIsStruct(result);
 		assertTrue(!StructIsEmpty(result), "Shoot. The return struct is empty.");
 		assertEquals(true, result.Success);
 		assertTrue(isJSON(result.Output),"Shoot result was not JSON.");
 		assertTrue(FindNoCase("Relaxation REST Framework",result.Output),"Part of the JSON string that should be there IS NOT.");
-		// test empty response
-		result = variables.RestFramework.handleRequest( Path = "/product/do-nothing", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
+		/* Test empty response */
+		result = variables.RestFramework.handleRequest( Path = "/product/do/nothing", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
+		//debug(result);
 		assertIsStruct(result);
 		assertTrue(!StructIsEmpty(result), "Shoot. The return struct is empty.");
 		assertEquals(true, result.Success);
@@ -179,32 +178,8 @@ component extends="mxunit.framework.TestCase" {
 	**/
 	private any function getBeanFactory() {
 		var bf = Mock();
-		bf.getBean('ProductService').returns(
-			{
-				"GetProductByID": function( string ProductID ) {
-					if ( arguments.ProductID == 1 ) {
-						return {
-							"ProductID": 1
-							,"Name": "Relaxation REST Framework"
-							,"DateCreated": "April 1st 2013"
-						};
-					} else {
-						return {
-							"ProductID": ""
-							,"Name": "Undefined"
-							,"DateCreated": ""
-						};
-					}
-				}
-			}
-		);
-		bf.getBean('NothingService').returns(
-			{
-				"ReturnNothing": function() {
-					return;	
-				}
-			}
-		);
+		var service = new Relaxation.UnitTests.ProductService();
+		bf.getBean('ProductService').returns( service );
 		return bf;
 	}
 	
