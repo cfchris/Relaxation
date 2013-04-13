@@ -95,13 +95,28 @@ component extends="mxunit.framework.TestCase" {
 	* @output false
 	**/
 	public void function findResourceConfig_should_find_existing_configs() {
-		var match = variables.RestFramework.findResourceConfig( "/product/1/colors", "GET" );
+		makePublic(variables.RestFramework,"findResourceConfig");
+		/* Test static URL. */
+		var match = variables.RestFramework.findResourceConfig( "/product/colors", "GET" );
 		//debug(match);
 		assertIsStruct(match);
-		assertTrue(!StructIsEmpty(match), "Shoot. The return struct is empty.");
 		assertEquals(true, match.located);
 		assertEquals("ProductService", match.Bean);
 		assertEquals("getProductColors", match.Method);
+		/* Test dynamic URL. */
+		var match = variables.RestFramework.findResourceConfig( "/product/1", "GET" );
+		//debug(match);
+		assertIsStruct(match);
+		assertEquals(true, match.located);
+		assertEquals("ProductService", match.Bean);
+		assertEquals("getProductByID", match.Method);
+		/* Test deeper dynamic URL. */
+		var match = variables.RestFramework.findResourceConfig( "/product/1/colors", "GET" );
+		//debug(match);
+		assertIsStruct(match);
+		assertEquals(true, match.located);
+		assertEquals("ProductService", match.Bean);
+		assertEquals("getProductColorsByProduct", match.Method);
 	}
 	
 	/**
@@ -109,6 +124,7 @@ component extends="mxunit.framework.TestCase" {
 	* @output false
 	**/
 	public void function findResourceConfig_should_not_find_nonexisting_configs() {
+		makePublic(variables.RestFramework,"findResourceConfig");
 		/* Ask for config for non-existing resource. */
 		var match = variables.RestFramework.findResourceConfig( "/NON/EXISTING/PATH", "GET" );
 		assertIsStruct(match);
@@ -128,24 +144,33 @@ component extends="mxunit.framework.TestCase" {
 	* @output false
 	**/
 	public void function gatherRequestArguments_should_work() {
-		var URLScope = {"URLTestArg": "urltestvalue"};
-		var FormScope = {"FormTestArg": "formtestvalue"};
-		var RequestBody = '{"BodyTestArg": "bodytestvalue", "AnotherArgument": "AnotherTestValue"}';
-		var Match = {
-			"Path": "/product/321/colors/red/"
-			,"Pattern": "/product/{ProductID}/colors/{Color}/"
-			,"Regex": "^/product/([^/]+?)/colors/([^/]+?)/$"
-		};
+		makePublic(variables.RestFramework,"findResourceConfig");
+		makePublic(variables.RestFramework,"gatherRequestArguments");
+		var URLScope = {"URLTestArg": "urltestvalue", "PriorityTestArg": "From URL"};
+		var FormScope = {"FormTestArg": "formtestvalue", "PriorityTestArg": "From Form"};
+		var RequestBody = '{"BodyTestArg": "bodytestvalue", "AnotherArgument": "AnotherTestValue", "PriorityTestArg": "From Body"}';
+		var RequestBodyValues = DeserializeJSON(RequestBody);
+		var Match = variables.RestFramework.findResourceConfig("/product/321/colors/red/priority/from-uri","POST");
 		var args = variables.RestFramework.gatherRequestArguments(ResourceMatch = Match, RequestBody = RequestBody, URLScope = URLScope, FormScope = FormScope );
 		//debug(args);
 		assertIsStruct(args);
-		assertTrue(!StructIsEmpty(args), "Shoot. The return struct is empty.");
+		assertIsStruct(args.ArgumentSources);
+		assertIsStruct(args.ArgumentSources.URLScope);
+		assertIsStruct(args.ArgumentSources.FormScope);
+		assertIsStruct(args.ArgumentSources.PathValues);
+		/* Confirm body args are in "payload". */
+		assertEquals(RequestBodyValues.BodyTestArg, args.payload.BodyTestArg);
+		assertEquals(RequestBodyValues.AnotherArgument, args.payload.AnotherArgument);
+		/* Confirm body args are also in the root (Only works if it's a JSON object). */
+		assertEquals(RequestBodyValues.BodyTestArg, args.BodyTestArg);
+		assertEquals(RequestBodyValues.AnotherArgument, args.AnotherArgument);
+		/* Confirm that the correct value for the priority test arg was set. */
+		assertEquals("from-uri", args.PriorityTestArg);
+		/* Confirm misc values are correct. */
 		assertEquals(URLScope.URLTestArg, args.URLTestArg);
-		assertEquals(FormScope.FormTestArg, args.FormTestArg);
-		assertEquals("bodytestvalue", args.payload.BodyTestArg);
-		assertEquals("AnotherTestValue", args.payload.AnotherArgument);
 		assertEquals(321, args.ProductID);
 		assertEquals("red", args.Color);
+		assertEquals(FormScope.FormTestArg, args.FormTestArg);
 	}
 	
 	/**

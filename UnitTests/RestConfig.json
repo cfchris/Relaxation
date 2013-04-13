@@ -7,6 +7,12 @@
 				,"Method": "getAllProducts"
 			}
 		}
+		,"/product/colors": {
+			"GET": {
+				"Bean": "ProductService"
+				,"Method": "getProductColors"
+			}
+		}
 		,"/product/{ProductID}": {
 			"GET": {
 				"Bean": "ProductService"
@@ -20,7 +26,13 @@
 		,"/product/{ProductID}/colors": {
 			"GET": {
 				"Bean": "ProductService"
-				,"Method": "getProductColors"
+				,"Method": "getProductColorsByProduct"
+			}
+		}
+		,"/product/{ProductID}/colors/{Color}/priority/{PriorityTestArg}": {
+			"POST": {
+				"Bean": "ProductService"
+				,"Method": "JustForPatternMatchTesting"
 			}
 		}
 		,"/product/do/nothing": {
