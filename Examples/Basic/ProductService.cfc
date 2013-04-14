@@ -6,9 +6,9 @@ component displayname="Product Service" hint="I am the testing Product Service" 
 	**/
 	public component function init() {
 		variables.Products = [
-			{"ProductID":1, "Name": "Hot Sauce!", "Price": "$7.99", "Vendor": "REST And Relaxation Store"}
-			,{"ProductID":2, "Name": "Awesome Sauce!", "Price": "$12.99", "Vendor": "REST And Relaxation Store"}
-			,{"ProductID":3, "Name": "Beans And Rice", "Price": "$0.00", "Vendor": "REST And Relaxation Store"}
+			{"ProductID" = 1, "Name" = "Hot Sauce!", "Price" = "$7.99", "Vendor" = "REST And Relaxation Store"}
+			,{"ProductID" = 2, "Name" = "Awesome Sauce!", "Price" = "$12.99", "Vendor" = "REST And Relaxation Store"}
+			,{"ProductID" = 3, "Name" = "Beans And Rice", "Price" = "$0.00", "Vendor" = "REST And Relaxation Store"}
 		];
 		return this;
 	}
@@ -47,8 +47,8 @@ component displayname="Product Service" hint="I am the testing Product Service" 
 		arrayAppend(variables.Products, payload);
 		
 		return {
-			"ProductID": payload.ProductID,
-			"self": "/product/#payload.ProductID#"
+			"ProductID" = payload.ProductID,
+			"self" = "/product/#payload.ProductID#"
 		};
 		
 	}
@@ -69,8 +69,8 @@ component displayname="Product Service" hint="I am the testing Product Service" 
 		}
 		
 		return {
-			"ProductID": payload.ProductID,
-			"self": "/product/#payload.ProductID#"
+			"ProductID" = payload.ProductID,
+			"self" = "/product/#payload.ProductID#"
 		};
 	}
 	

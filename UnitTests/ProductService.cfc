@@ -13,15 +13,15 @@ component displayname="Testing Service" hint="I am a simple service to test requ
 	public struct function getProductByID( string ProductID ) {
 		if ( arguments.ProductID == 1 ) {
 			return {
-				"ProductID": 1
-				,"Name": "Relaxation REST Framework"
-				,"DateCreated": "April 1st 2013"
+				"ProductID" = 1
+				,"Name" = "Relaxation REST Framework"
+				,"DateCreated" = "April 1st 2013"
 			};
 		} else {
 			return {
-				"ProductID": ""
-				,"Name": "Undefined"
-				,"DateCreated": ""
+				"ProductID" = ""
+				,"Name" = "Undefined"
+				,"DateCreated" = ""
 			};
 		}
 	}

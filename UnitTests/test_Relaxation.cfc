@@ -31,20 +31,12 @@ component extends="mxunit.framework.TestCase" {
 		assertEquals(true, result.Success);
 		
 		/* Second, test with an auth method that WILL authorize. */
-		variables.RestFramework.setAuthorizationMethod(
-			function( struct Resource ) {
-				return true;
-			}
-		);
+		variables.RestFramework.setAuthorizationMethod( returnTrue );
 		var result = variables.RestFramework.handleRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
 		assertEquals(true, result.Success);
 		
 		/* Third, test with an auth method that WON'T authorize. */
-		variables.RestFramework.setAuthorizationMethod(
-			function( struct Resource ) {
-				return false;
-			}
-		);
+		variables.RestFramework.setAuthorizationMethod( returnFalse );
 		var result = variables.RestFramework.handleRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
 		assertEquals(false, result.Success);
 		assertEquals("NotAuthorized", result.Error);
@@ -146,8 +138,8 @@ component extends="mxunit.framework.TestCase" {
 	public void function gatherRequestArguments_should_work() {
 		makePublic(variables.RestFramework,"findResourceConfig");
 		makePublic(variables.RestFramework,"gatherRequestArguments");
-		var URLScope = {"URLTestArg": "urltestvalue", "PriorityTestArg": "From URL"};
-		var FormScope = {"FormTestArg": "formtestvalue", "PriorityTestArg": "From Form"};
+		var URLScope = {"URLTestArg" = "urltestvalue", "PriorityTestArg" = "From URL"};
+		var FormScope = {"FormTestArg" = "formtestvalue", "PriorityTestArg" = "From Form"};
 		var RequestBody = '{"BodyTestArg": "bodytestvalue", "AnotherArgument": "AnotherTestValue", "PriorityTestArg": "From Body"}';
 		var RequestBodyValues = DeserializeJSON(RequestBody);
 		var Match = variables.RestFramework.findResourceConfig("/product/321/colors/red/priority/from-uri","POST");
@@ -214,6 +206,22 @@ component extends="mxunit.framework.TestCase" {
 	**/
 	private struct function getFrameworkConfig() {
 		return DeserializeJSON(fileRead(expandPath(variables.ConfigPath)));
+	}
+	
+	/**
+	* @hint "I return false."
+	* @output false
+	**/
+	private boolean function returnFalse() {
+		return false;
+	}
+	
+	/**
+	* @hint "I return true."
+	* @output false
+	**/
+	private boolean function returnTrue() {
+		return true;
 	}
 
 }

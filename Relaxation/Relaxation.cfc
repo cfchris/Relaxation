@@ -6,6 +6,7 @@ component
 {
 
 	property name="BeanFactory" type="component";
+	property name="cfmlFunctions" type="component";
 	property name="AuthorizationMethod" type="any";
 	property name="OnErrorMethod" type="any";
 	
@@ -16,6 +17,8 @@ component
 	* @output false
 	**/
 	public component function init( required any Config ) {
+		/* Set object to handle CFML stuff. */
+		setcfmlFunctions( new cfmlFunctions() );
 		/* Deal with different types of configs passed in. */
 		arguments.Config = translateConfig( arguments.Config );
 		/* Set the Return Format. Default JSON. */
@@ -56,10 +59,10 @@ component
 			arguments.RequestBody = trim(ToString(GetHttpRequestData().Content));
 		}
 		var result = {
-			"Success": true
-			,"Output": ""
-			,"Error": ""
-			,"ErrorMessage": ""
+			"Success" = true
+			,"Output" = ""
+			,"Error" = ""
+			,"ErrorMessage" = ""
 		};
 		var resource = findResourceConfig( argumentCollection = arguments );
 		if ( !resource.Located ) {
@@ -85,7 +88,7 @@ component
 		var args = gatherRequestArguments( argumentCollection = arguments, ResourceMatch = resource);
 		/* Now call the method on the bean! */
 		try {
-			var methodResult = Invoke(bean, resource.Method, args);
+			var methodResult = variables.cfmlFunctions.cfmlInvoke(bean, resource.Method, args);
 		} catch (Any e) {
 			if ( !isNull(getOnErrorMethod()) ) {
 				var onError = getOnErrorMethod();
@@ -112,7 +115,7 @@ component
 		variables.Config.Resources = [];
 		/* By sorting the keys this way, static patterns should take priority over dynamic ones. */
 		var keyList = ListSort(StructKeyList(arguments.Patterns), 'textnocase', 'asc');
-		for ( var key in keyList ) {
+		for ( var key in ListToArray(keyList) ) {
 			var resource = arguments.Patterns[key];
 			var resource["Pattern"] = key & ( Right(trim(key),1) EQ '/' ? '' : '/' );
 			/* Start building the regex for this pattern. */
@@ -139,12 +142,12 @@ component
 		/* Add trailing slash to make matching easier. */
 		arguments.Path &= ( Right(trim(arguments.Path),1) EQ '/' ? '' : '/' );
 		var result = {
-			"Located": false
-			,"Error": ""
-			,"Path": ""
-			,"Pattern": ""
-			,"Regex": ""
-			,"Verb": ""
+			"Located" = false
+			,"Error" = ""
+			,"Path" = ""
+			,"Pattern" = ""
+			,"Regex" = ""
+			,"Verb" = ""
 		};
 		for ( var resource in variables.Config.Resources ) {
 			if ( RefindNoCase(resource.Regex,arguments.Path) ) {
@@ -193,12 +196,12 @@ component
 			Payload = DeserializeJSON(trim(arguments.RequestBody));
 		}
 		var args = {
-			"Payload": Payload,
-			"ArgumentSources": {
-				"URLScope": arguments.URLScope,
-				"FormScope": arguments.FormScope,
-				"PathValues": PathValues,
-				"Payload": Payload
+			"Payload" = Payload,
+			"ArgumentSources" = {
+				"URLScope" = arguments.URLScope,
+				"FormScope" = arguments.FormScope,
+				"PathValues" = PathValues,
+				"Payload" = Payload
 			}
 		};
 		/* Coalesce all the sources together. User "overwrite" false and put the highest priority first.  */

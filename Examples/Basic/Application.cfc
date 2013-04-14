@@ -8,7 +8,8 @@ component output="false" {
 	**/
 	public function onRequestStart() {
 		if ( isDefined("url.Reinit") || isNull(application.Relaxation) ) {
-			var Relaxation = new Relaxation.Relaxation.Relaxation( "./RestConfig.json.cfm" ).setBeanFactory( new TestFactory() );
+			var Relaxation = new Relaxation.Relaxation.Relaxation( "./RestConfig.json.cfm" );
+			Relaxation.setBeanFactory( new TestFactory() );
 			application.Relaxation = Relaxation;
 		}
 	}
