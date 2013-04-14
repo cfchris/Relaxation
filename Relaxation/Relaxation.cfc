@@ -177,6 +177,8 @@ component
 	* @output false
 	**/
 	private struct function gatherRequestArguments( required struct ResourceMatch, string RequestBody = "", struct URLScope = {}, struct FormScope = {} ) {
+		/* Grab the DefaultArguments if they exist. */
+		var DefaultArgs = isNull(arguments.ResourceMatch.DefaultArguments) ? {} : arguments.ResourceMatch.DefaultArguments;
 		/* Get the arguments from the URIs (e.g. /product/321 to ProductID=321) */
 		var PathValues = {};
 		if ( ReFindNoCase("[{}]", ResourceMatch.Pattern) ) {
@@ -198,19 +200,21 @@ component
 		var args = {
 			"Payload" = Payload,
 			"ArgumentSources" = {
-				"URLScope" = arguments.URLScope,
+				"DefaultArguments" = DefaultArgs,
 				"FormScope" = arguments.FormScope,
 				"PathValues" = PathValues,
-				"Payload" = Payload
+				"Payload" = Payload,
+				"URLScope" = arguments.URLScope
 			}
 		};
 		/* Coalesce all the sources together. User "overwrite" false and put the highest priority first.  */
-		StructAppend(args, PathValues, false);		/* Path 1st */
+		StructAppend(args, PathValues, false);	/* Path 1st */
 		if ( isStruct(Payload) ) {
 			StructAppend(args, Payload, false);	/* Body 2nd */
 		}
-		StructAppend(args, URLScope, false);		/* URL 3rd */
-		StructAppend(args, FormScope, false);		/* Form 4th */
+		StructAppend(args, URLScope, false);	/* URL 3rd */
+		StructAppend(args, FormScope, false);	/* Form 4th */
+		StructAppend(args, DefaultArgs, false);	/* DefaultArguments 5th */
 		return args;
 	}
 	
