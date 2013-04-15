@@ -20,7 +20,7 @@ If you want to know more, checkout the [QuickStart Guide](https://github.com/cfc
 
 # License
 
-Copyright (c) 2012 DealerPeak LLC
+Copyright (c) 2013 Chris Phillips and Contributors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
