@@ -1,6 +1,5 @@
 {
-	"ReturnFormat": "JSON"
-	,"RequestPatterns": {
+	"RequestPatterns": {
 		"/product": {
 			"GET": {
 				"Bean": "ProductService"
