@@ -14,7 +14,9 @@ With Relaxation, handling REST requests can be as easy as this:
 	result = application.Relaxation.handleRequest();
 	writeOutput(result.Output);
 
-There's a little more to it than that. But, I don't want to stress you out. If you want to know more, download the files and poke around the examples. Or whatever. No pressure.
+There's a little more to it than that. But, I don't want to stress you out. 
+
+If you want to know more, checkout the [QuickStart Guide](https://github.com/cfchris/Relaxation/wiki/QuickStart-Guide). Or download the files and poke around the examples. Or whatever. No pressure.
 
 # License
 
