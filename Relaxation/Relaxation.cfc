@@ -89,6 +89,8 @@ component
 		/* Now call the method on the bean! */
 		try {
 			var methodResult = variables.cfmlFunctions.cfmlInvoke(bean, resource.Method, args);
+			/* If calling the method was successful. Tell the client we are sending JSON. */
+			getpagecontext().getresponse().setcontenttype('application/json');
 		} catch (Any e) {
 			if ( !isNull(getOnErrorMethod()) ) {
 				var onError = getOnErrorMethod();
