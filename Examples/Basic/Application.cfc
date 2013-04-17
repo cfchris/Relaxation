@@ -7,10 +7,10 @@ component output="false" {
 	* @output true
 	**/
 	public function onRequestStart() {
-		if ( isDefined("url.Reinit") || isNull(application.Relaxation) ) {
+		if ( isDefined("url.Reinit") || isNull(application.REST) ) {
 			var Relaxation = new Relaxation.Relaxation.Relaxation( "./RestConfig.json.cfm" );
 			Relaxation.setBeanFactory( new TestFactory() );
-			application.Relaxation = Relaxation;
+			application.REST = Relaxation;
 		}
 	}
 	
@@ -19,7 +19,7 @@ component output="false" {
 	* @output true
 	**/
 	public void function onRequest() {
-		var result = application.Relaxation.handleRequest();
+		var result = application.REST.handleRequest();
 		getpagecontext().getresponse().setcontenttype('application/json');
 		if ( result.Success ) {
 			writeOutput( result.Output );
