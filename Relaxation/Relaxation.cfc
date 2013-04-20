@@ -150,7 +150,14 @@ component
 		result.AllowedVerbs = resource.AllowedVerbs;
 		if ( !isNull(getAuthorizationMethod()) ) {
 			var authorize = getAuthorizationMethod();
-			if ( !authorize(resource) ) {
+			var authArg = {
+				"Bean" = resource.Bean,
+				"Method" = resource.Method,
+				"Path" = resource.Path,
+				"Pattern" = resource.Pattern,
+				"Verb" = resource.Verb
+			};
+			if ( !authorize(authArg) ) {
 				result.Success = false;
 				result.Error = "NotAuthorized";
 				return result;
