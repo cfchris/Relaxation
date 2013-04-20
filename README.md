@@ -8,11 +8,10 @@ Relaxation is a REST framework for ColdFusion that helps you build a REST API. A
 With Relaxation, handling REST requests can be as easy as this:
 
 	/* Somewhere in your initialization code */
-	application.Relaxation = new Relaxation.Relaxation( "./RestConfig.json" ).setBeanFactory( application.BeanFactory );
+	application.REST = new com.Relaxation.Relaxation( "./RestConfig.json.cfm", application.BeanFactory );
 	
 	/* In onRequest (or wherever) */
-	result = application.Relaxation.handleRequest();
-	writeOutput(result.Output);
+	application.Relaxation.handleRequest();
 
 There's a little more to it than that. But, I don't want to stress you out. 
 
