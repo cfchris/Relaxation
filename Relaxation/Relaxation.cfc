@@ -51,9 +51,12 @@ component
 	public struct function handleRequest( string Path = CGI.PATH_INFO ) {
 		/* Process the request. */
 		var result = processRequest( ArgumentCollection = arguments );
+		/* Tell the client we are sending JSON. */
+		setResponseContentType('application/json');
 		/* Deal with rendering the result. */
 		if ( result.Success ) {
 			/* Happiness, the request was successful! */
+			setResponseHeader('Allow', result.AllowedVerbs);
 			writeOutput( result.Output );
 			if (len(result.Output) == 0) {
 				/* No output means a 204 */
@@ -64,33 +67,34 @@ component
 			switch(result.Error) {
 				case "NotAuthorized": {
 					var response = {
-						'status': 403,
-						'statusText': 'Forbidden',
-						'responseText': 'The user does not have access to this resource'
+						'status' = 403,
+						'statusText' = 'Forbidden',
+						'responseText' = 'The user does not have access to this resource'
 					};
 					break;
 				}
 				case "ResourceNotFound": {
 					var response = {
-						'status': 404,
-						'statusText': 'Not Found',
-						'responseText': result.ErrorMessage
+						'status' = 404,
+						'statusText' = 'Not Found',
+						'responseText' = result.ErrorMessage
 					};
 					break;
 				}
 				case "VerbNotFound": {
+					setResponseHeader('Allow', result.AllowedVerbs);
 					var response = {
-						'status': 405,
-						'statusText': 'Method Not Allowed',
-						'responseText': result.ErrorMessage
+						'status' = 405,
+						'statusText' = 'Method Not Allowed',
+						'responseText' = result.ErrorMessage
 					};
 					break;
 				}
 				default: {
 					var response = {
-						'status': 500,
-						'statusText': 'Unknown Error Type',
-						'responseText': result.ErrorMessage
+						'status' = 500,
+						'statusText' = 'Unknown Error Type',
+						'responseText' = result.ErrorMessage
 					};
 					break;
 				}
@@ -129,6 +133,7 @@ component
 			,"Output" = ""
 			,"Error" = ""
 			,"ErrorMessage" = ""
+			,"AllowedVerbs" = ""
 		};
 		var resource = findResourceConfig( argumentCollection = arguments );
 		if ( !resource.Located ) {
@@ -142,11 +147,13 @@ component
 			}
 			return result;
 		}
+		result.AllowedVerbs = resource.AllowedVerbs;
 		if ( !isNull(getAuthorizationMethod()) ) {
 			var authorize = getAuthorizationMethod();
 			if ( !authorize(resource) ) {
 				result.Success = false;
 				result.Error = "NotAuthorized";
+				return result;
 			}
 		}
 		var bean = getBeanFactory().getBean(resource.Bean);
@@ -155,8 +162,6 @@ component
 		/* Now call the method on the bean! */
 		try {
 			var methodResult = variables.cfmlFunctions.cfmlInvoke(bean, resource.Method, args);
-			/* If calling the method was successful. Tell the client we are sending JSON. */
-			getpagecontext().getresponse().setcontenttype('application/json');
 		} catch (Any e) {
 			result.Success = false;
 			result.ErrorMessage = e.Message;
@@ -172,11 +177,27 @@ component
 	}
 	
 	/**
-	* @hint "I help set response statuse headers"
+	* @hint "I set response content type."
 	* @output false
 	**/
-	public void function setResponseStatus( required string Status, string StatusText = "" ) {
-		getpagecontext().getResponse().setStatus(arguments.Status, arguments.StatusText);
+	public void function setResponseContentType( required string ContentType ) {
+		getpagecontext().getresponse().setContentType(JavaCast("string",arguments.ContentType));
+	}
+	
+	/**
+	* @hint "I set response headers."
+	* @output false
+	**/
+	public void function setResponseHeader( required string Header, string HeaderText = "" ) {
+		getpagecontext().getResponse().setHeader(JavaCast("string",arguments.Header), JavaCast("string",arguments.HeaderText));
+	}
+	
+	/**
+	* @hint "I set response status headers."
+	* @output false
+	**/
+	public void function setResponseStatus( required numeric Status, string StatusText = "" ) {
+		getpagecontext().getResponse().setStatus(JavaCast("int",arguments.Status), JavaCast("string",arguments.StatusText));
 	}
 	
 	
@@ -195,11 +216,13 @@ component
 		var keyList = ListSort(StructKeyList(arguments.Patterns), 'textnocase', 'asc');
 		for ( var key in ListToArray(keyList) ) {
 			var resource = arguments.Patterns[key];
-			var resource["Pattern"] = key & ( Right(trim(key),1) EQ '/' ? '' : '/' );
-			/* Start building the regex for this pattern. */
-			resource.Regex = key;
+			/* Build "AllowedVerbs" for "Allow" header. */
+			resource["AllowedVerbs"] = uCase(ListAppend(StructKeyList(resource),"OPTIONS"));
+			resource["AllowedVerbs"] = ListSort(resource["AllowedVerbs"],"textnocase","ASC");
 			/* Add trailing slash to make matching easier. */
-			resource.Regex &= ( Right(trim(resource.Regex),1) EQ '/' ? '' : '/' );
+			resource["Pattern"] = key & ( Right(trim(key),1) EQ '/' ? '' : '/' );
+			/* Start building the regex for this pattern. */
+			resource.Regex = resource["Pattern"];
 			/* Replace the {} sections with capture groups. */
 			resource.Regex = REReplace(resource.Regex, "{[^}]*?}", "([^/]+?)", "all");
 			/* Make sure it matches exactly. (Start to finish) */
@@ -226,6 +249,7 @@ component
 			,"Pattern" = ""
 			,"Regex" = ""
 			,"Verb" = ""
+			,"AllowedVerbs" = ""
 		};
 		for ( var resource in variables.Config.Resources ) {
 			if ( RefindNoCase(resource.Regex,arguments.Path) ) {
@@ -236,6 +260,7 @@ component
 		if ( IsNull(match) ) {
 			result.Error = "ResourceNotFound";
 		} else {
+			result.AllowedVerbs = match.AllowedVerbs;
 			if ( !StructKeyExists(match, arguments.Verb) ) {
 				result.Error = "VerbNotFound";
 			} else {

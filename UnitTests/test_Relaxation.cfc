@@ -94,6 +94,7 @@ component extends="mxunit.framework.TestCase" {
 		assertEquals(true, match.located);
 		assertEquals("ProductService", match.Bean);
 		assertEquals("getProductColors", match.Method);
+		assertEquals("GET,OPTIONS", match.AllowedVerbs);
 		/* Test dynamic URL. */
 		var match = variables.RestFramework.findResourceConfig( "/product/1", "GET" );
 		//debug(match);
@@ -101,6 +102,7 @@ component extends="mxunit.framework.TestCase" {
 		assertEquals(true, match.located);
 		assertEquals("ProductService", match.Bean);
 		assertEquals("getProductByID", match.Method);
+		assertEquals("GET,OPTIONS,POST", match.AllowedVerbs);
 		/* Test deeper dynamic URL. */
 		var match = variables.RestFramework.findResourceConfig( "/product/1/colors", "GET" );
 		//debug(match);
