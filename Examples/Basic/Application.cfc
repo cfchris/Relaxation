@@ -12,6 +12,7 @@ component output="false" {
 			var Relaxation = new Relaxation.Relaxation.Relaxation( "./RestConfig.json.cfm" );
 			Relaxation.setBeanFactory( application.BeanFactory );
 			Relaxation.setOnErrorMethod( handleError );
+			Relaxation.setAuthorizationMethod( handleAuth );
 			application.REST = Relaxation;
 		}
 	}
@@ -31,6 +32,10 @@ component output="false" {
 	private void function handleError(Any e) {
 		application.BeanFactory.getBean("ErrorLogger").logError( arguments.e );
 		return;
+	}
+	
+	private boolean function handleAuth(resource) {
+		return true;
 	}
 	
 }
