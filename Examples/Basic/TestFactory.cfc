@@ -6,6 +6,7 @@ component hint="I am the testing Bean Factory" output="false" persistent="false"
 	**/
 	public component function init() {
 		variables.ProductService = new ProductService();
+		variables.ErrorLogger = new ErrorLogger();
 		return this;
 	}
 	
@@ -14,7 +15,7 @@ component hint="I am the testing Bean Factory" output="false" persistent="false"
 	* @output false
 	**/
 	public component function getBean( string BeanName ) {
-		return variables.ProductService;
+		return variables[arguments.BeanName];
 	}
 
 }

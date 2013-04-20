@@ -8,7 +8,9 @@ component output="false" {
 	**/
 	public function onRequestStart() {
 		if ( isDefined("url.Reinit") || isNull(application.REST) ) {
-			var Relaxation = new Relaxation.Relaxation.Relaxation( "./RestConfig.json.cfm", new TestFactory() );
+			application.BeanFactory = new TestFactory();
+			var Relaxation = new Relaxation.Relaxation.Relaxation( "./RestConfig.json.cfm" );
+			Relaxation.setBeanFactory( application.BeanFactory );
 			Relaxation.setOnErrorMethod( handleError );
 			application.REST = Relaxation;
 		}
@@ -23,10 +25,11 @@ component output="false" {
 	}
 	
 	/**
-	* @hint "I handle errors. (By doing nothing.)"
+	* @hint "I handle errors."
 	* @output false
 	**/
 	private void function handleError(Any e) {
+		application.BeanFactory.getBean("ErrorLogger").logError( arguments.e );
 		return;
 	}
 	
