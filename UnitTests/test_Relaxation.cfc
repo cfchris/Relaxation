@@ -3,8 +3,7 @@ component extends="mxunit.framework.TestCase" {
 	/* this will run before every single test in this test case */
 	public void function setUp() {
 		variables.ConfigPath = "/Relaxation/UnitTests/RestConfig.json";
-		variables.RestFramework = new Relaxation.Relaxation.Relaxation(variables.ConfigPath);
-		variables.RestFramework.setBeanFactory( getBeanFactory() );
+		variables.RestFramework = new Relaxation.Relaxation.Relaxation(variables.ConfigPath, getBeanFactory());
 	}
 	
 	/* this will run after every single test in this test case */

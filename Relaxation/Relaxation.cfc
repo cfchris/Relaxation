@@ -16,13 +16,20 @@ component
 	* @hint "I initialize the object and get the routing all setup."
 	* @output false
 	**/
-	public component function init( required any Config ) {
+	public component function init( required any Config, component BeanFactory, any AuthorizationMethod, any OnErrorMethod ) {
 		/* Set object to handle CFML stuff. */
 		setcfmlFunctions( new cfmlFunctions() );
+		if ( structKeyExists(arguments,'BeanFactory') ) {
+			setBeanFactory( arguments.BeanFactory );
+		}
+		if ( structKeyExists(arguments,'AuthorizationMethod') ) {
+			setAuthorizationMethod( arguments.AuthorizationMethod );
+		}
+		if ( structKeyExists(arguments,'OnErrorMethod') ) {
+			setOnErrorMethod( arguments.OnErrorMethod );
+		}
 		/* Deal with different types of configs passed in. */
 		arguments.Config = translateConfig( arguments.Config );
-		/* Set the Return Format. Default JSON. */
-		variables.Config.ReturnFormat = isDefined("arguments.Config.ReturnFormat") ? arguments.Config.ReturnFormat : 'JSON';
 		/* Get the pattern matching for resources setup. */
 		configureResources( arguments.Config.RequestPatterns );
 		/* Always return the object. */
