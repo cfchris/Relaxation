@@ -17,7 +17,13 @@ There's a little more to it than that. But, I don't want to stress you out.
 
 If you want to know more, checkout the [QuickStart Guide](https://github.com/cfchris/Relaxation/wiki/QuickStart-Guide). Or download the files and poke around the examples. Or whatever. No pressure.
 
-# License
+## Requirements
+
+I have tested Relaxation on CF 9 and 10 and Railo 4. I suspect it _might_ work on CF8. But, I would not expect it to work on older CF version because it is written primarily in all script.
+
+There are no external dependencies to use Relaxation.
+
+## License
 
 Copyright (c) 2013 Chris Phillips and Contributors
 
