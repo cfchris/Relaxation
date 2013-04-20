@@ -1,7 +1,7 @@
 component
 	accessors="true"
-	displayname="Chill REST Framework"
-	hint="I am the Chill. Framework for REST in CF. Relax, I got this!"
+	displayname="Relaxation REST Framework"
+	hint="I am the Relaxation framework for REST in CF. Relax, I got this!"
 	output="false"
 {
 
