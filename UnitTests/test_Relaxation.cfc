@@ -27,17 +27,17 @@ component extends="mxunit.framework.TestCase" {
 	public void function authorization_hook_should_work() {
 		
 		/* First test without an Authorization Method. */
-		var result = variables.RestFramework.handleRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
+		var result = variables.RestFramework.processRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
 		assertEquals(true, result.Success);
 		
 		/* Second, test with an auth method that WILL authorize. */
 		variables.RestFramework.setAuthorizationMethod( returnTrue );
-		var result = variables.RestFramework.handleRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
+		var result = variables.RestFramework.processRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
 		assertEquals(true, result.Success);
 		
 		/* Third, test with an auth method that WON'T authorize. */
 		variables.RestFramework.setAuthorizationMethod( returnFalse );
-		var result = variables.RestFramework.handleRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
+		var result = variables.RestFramework.processRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
 		assertEquals(false, result.Success);
 		assertEquals("NotAuthorized", result.Error);
 	}
@@ -177,14 +177,33 @@ component extends="mxunit.framework.TestCase" {
 	* @output false
 	**/
 	public void function handleRequest_should_work() {
+		injectMethod(variables.RestFramework, this, "doNothing", "setResponseStatus");
+		/* Test good response */
 		var result = variables.RestFramework.handleRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
+		assertIsStruct(result);
+		assertEquals(true, result.Success);
+		assertEquals(true, result.Rendered);
+		/* Test bad response */
+		result = variables.RestFramework.handleRequest( Path = "/product/this/will/never/work", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
+		debug(result);
+		assertIsStruct(result);
+		assertEquals(false, result.Success);
+		assertEquals(true, result.Rendered);
+	}
+	
+	/**
+	* @hint "I test processRequest."
+	* @output false
+	**/
+	public void function processRequest_should_work() {
+		var result = variables.RestFramework.processRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
 		assertIsStruct(result);
 		assertTrue(!StructIsEmpty(result), "Shoot. The return struct is empty.");
 		assertEquals(true, result.Success);
 		assertTrue(isJSON(result.Output),"Shoot result was not JSON.");
 		assertTrue(FindNoCase("Relaxation REST Framework",result.Output),"Part of the JSON string that should be there IS NOT.");
 		/* Test empty response */
-		result = variables.RestFramework.handleRequest( Path = "/product/do/nothing", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
+		result = variables.RestFramework.processRequest( Path = "/product/do/nothing", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
 		//debug(result);
 		assertIsStruct(result);
 		assertTrue(!StructIsEmpty(result), "Shoot. The return struct is empty.");
@@ -229,6 +248,14 @@ component extends="mxunit.framework.TestCase" {
 	**/
 	private boolean function returnTrue() {
 		return true;
+	}
+	
+	/**
+	* @hint "I do nothing."
+	* @output false
+	**/
+	private void function doNothing() {
+		/* Do nothing. */
 	}
 
 }

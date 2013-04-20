@@ -38,10 +38,69 @@ component
 	}
 	
 	/**
-	* @hint "I will handle a REST request. Given the requested path and verb, I will call the correct resource and method."
+	* @hint "I will handle a REST request including appropriate output and headers."
+	* @output true
+	**/
+	public struct function handleRequest( string Path = CGI.PATH_INFO ) {
+		/* Process the request. */
+		var result = processRequest( ArgumentCollection = arguments );
+		/* Deal with rendering the result. */
+		if ( result.Success ) {
+			/* Happiness, the request was successful! */
+			writeOutput( result.Output );
+			if (len(result.Output) == 0) {
+				/* No output means a 204 */
+				setResponseStatus(204,'No Content');
+			}
+		} else {
+			/* Provide appropriate error responses. */
+			switch(result.Error) {
+				case "NotAuthorized": {
+					var response = {
+						'status': 403,
+						'statusText': 'Forbidden',
+						'responseText': 'The user does not have access to this resource'
+					};
+					break;
+				}
+				case "ResourceNotFound": {
+					var response = {
+						'status': 404,
+						'statusText': 'Not Found',
+						'responseText': result.ErrorMessage
+					};
+					break;
+				}
+				case "VerbNotFound": {
+					var response = {
+						'status': 405,
+						'statusText': 'Method Not Allowed',
+						'responseText': result.ErrorMessage
+					};
+					break;
+				}
+				default: {
+					var response = {
+						'status': 500,
+						'statusText': 'Unknown Error Type',
+						'responseText': result.ErrorMessage
+					};
+					break;
+				}
+			}
+			/* output the response */
+			setResponseStatus(response.status, response.statusText);
+			writeOutput( SerializeJSON(response) );
+		}
+		result["Rendered"] = true;
+		return result;
+	}
+	
+	/**
+	* @hint "I will process a REST request. Given the requested path and verb, I will call the correct resource and method."
 	* @output false
 	**/
-	public struct function handleRequest(
+	public struct function processRequest(
 		string Path = CGI.PATH_INFO,
 		string Verb = CGI.REQUEST_METHOD,
 		string RequestBody,
@@ -92,6 +151,8 @@ component
 			/* If calling the method was successful. Tell the client we are sending JSON. */
 			getpagecontext().getresponse().setcontenttype('application/json');
 		} catch (Any e) {
+			result.Success = false;
+			result.ErrorMessage = e.Message;
 			if ( !isNull(getOnErrorMethod()) ) {
 				var onError = getOnErrorMethod();
 				onError(e, resource, args);
@@ -101,6 +162,14 @@ component
 		}
 		result.Output = isDefined("methodResult") ? SerializeJSON(methodResult) : "";
 		return result;
+	}
+	
+	/**
+	* @hint "I help set response statuse headers"
+	* @output false
+	**/
+	public void function setResponseStatus( required string Status, string StatusText = "" ) {
+		getpagecontext().getResponse().setStatus(arguments.Status, arguments.StatusText);
 	}
 	
 	
@@ -231,12 +300,10 @@ component
 			/* It's already a struct. Return it. */
 			return arguments.Config;
 		}
-		
 		if ( isJSON(trim(arguments.Config)) ) {
 			/* It's a JSON string. Deserialize and return it. */
 			return DeserializeJSON(trim(arguments.Config));
 		}
-		
 		if ( !fileExists(arguments.Config) && fileExists(expandPath(arguments.Config)) ) {
 			arguments.Config = expandPath(arguments.Config);
 		}
