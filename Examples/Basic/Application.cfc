@@ -8,8 +8,8 @@ component output="false" {
 	**/
 	public function onRequestStart() {
 		if ( isDefined("url.Reinit") || isNull(application.REST) ) {
-			var Relaxation = new Relaxation.Relaxation.Relaxation( "./RestConfig.json.cfm" );
-			Relaxation.setBeanFactory( new TestFactory() );
+			var Relaxation = new Relaxation.Relaxation.Relaxation( "./RestConfig.json.cfm", new TestFactory() );
+			Relaxation.setOnErrorMethod( handleError );
 			application.REST = Relaxation;
 		}
 	}
@@ -19,13 +19,15 @@ component output="false" {
 	* @output true
 	**/
 	public void function onRequest() {
-		var result = application.REST.handleRequest();
-		getpagecontext().getresponse().setcontenttype('application/json');
-		if ( result.Success ) {
-			writeOutput( result.Output );
-		} else {
-			writeOutput( SerializeJSON(result) );
-		}
+		application.REST.handleRequest();
+	}
+	
+	/**
+	* @hint "I handle errors. (By doing nothing.)"
+	* @output false
+	**/
+	private void function handleError(Any e) {
+		return;
 	}
 	
 }
