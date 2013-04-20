@@ -11,7 +11,7 @@ With Relaxation, handling REST requests can be as easy as this:
 	application.REST = new com.Relaxation.Relaxation( "./RestConfig.json.cfm", application.BeanFactory );
 	
 	/* In onRequest (or wherever) */
-	application.Relaxation.handleRequest();
+	application.REST.handleRequest();
 
 There's a little more to it than that. But, I don't want to stress you out. 
 
