@@ -171,7 +171,7 @@ component
 				return result;
 			}
 		}
-		var bean = getBeanFactory().getBean(resource.Bean);
+		var bean = getMappedBean(resource.Bean);
 		/* Gather the arguments needed to call the method. */
 		var args = gatherRequestArguments( argumentCollection = arguments, ResourceMatch = resource);
 		/* Now call the method on the bean! */
@@ -338,6 +338,18 @@ component
 		StructAppend(args, FormScope, false);	/* Form 4th */
 		StructAppend(args, DefaultArgs, false);	/* DefaultArguments 5th */
 		return args;
+	}
+	
+	/**
+	* @hint "I will get the bean from the BeanFactory or as a new object."
+	* @output false
+	**/
+	private component function getMappedBean( required string Bean ) {
+		if ( isDefined("variables.BeanFactory") ) {
+			return getBeanFactory().getBean(arguments.Bean);
+		} else {
+			return CreateObject("component", arguments.Bean);
+		}
 	}
 	
 	/**

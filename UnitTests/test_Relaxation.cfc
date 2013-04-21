@@ -3,6 +3,7 @@ component extends="mxunit.framework.TestCase" {
 	/* this will run before every single test in this test case */
 	public void function setUp() {
 		variables.ConfigPath = "/Relaxation/UnitTests/RestConfig.json";
+		variables.ConfigPathNoBeanFactory = "/Relaxation/UnitTests/RestConfig-NoBeanFactory.json";
 		variables.RestFramework = new Relaxation.Relaxation.Relaxation(variables.ConfigPath, getBeanFactory());
 	}
 	
@@ -210,6 +211,22 @@ component extends="mxunit.framework.TestCase" {
 		assertTrue(!StructIsEmpty(result), "Shoot. The return struct is empty.");
 		assertEquals(true, result.Success);
 		assertEquals("", result.Output);
+	}
+	
+	/**
+	* @hint "I test processRequest WITHOUT a BeanFactory."
+	* @output false
+	**/
+	public void function processRequest_should_work_without_BeanFactory() {
+		/* Create new instance with NO bean factory. */
+		var RestFramework = new Relaxation.Relaxation.Relaxation(variables.ConfigPathNoBeanFactory);
+		/* Test regular get. */
+		var result = local.RestFramework.processRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
+		assertIsStruct(result);
+		assertTrue(!StructIsEmpty(result), "Shoot. The return struct is empty.");
+		assertEquals(true, result.Success);
+		assertTrue(isJSON(result.Output),"Shoot result was not JSON.");
+		assertTrue(FindNoCase("Relaxation REST Framework",result.Output),"Part of the JSON string that should be there IS NOT.");
 	}
 	
 	/*

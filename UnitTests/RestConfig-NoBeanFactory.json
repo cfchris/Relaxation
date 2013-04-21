@@ -1,0 +1,54 @@
+{
+	"RequestPatterns": {
+		"/product": {
+			"GET": {
+				"Bean": "Relaxation.UnitTests.ProductService"
+				,"Method": "getAllProducts"
+			}
+		}
+		,"/product/all-active": {
+			"GET": {
+				"Bean": "Relaxation.UnitTests.ProductService"
+				,"Method": "getAllProducts"
+				,"DefaultArguments": {
+					"Active": 1
+					,"Status": "Available"
+				}
+			}
+		}
+		,"/product/colors": {
+			"GET": {
+				"Bean": "Relaxation.UnitTests.ProductService"
+				,"Method": "getProductColors"
+			}
+		}
+		,"/product/{ProductID}": {
+			"GET": {
+				"Bean": "Relaxation.UnitTests.ProductService"
+				,"Method": "getProductByID"
+			}
+			,"POST": {
+				"Bean": "Relaxation.UnitTests.ProductService"
+				,"Method": "saveProduct"
+			}
+		}
+		,"/product/{ProductID}/colors": {
+			"GET": {
+				"Bean": "Relaxation.UnitTests.ProductService"
+				,"Method": "getProductColorsByProduct"
+			}
+		}
+		,"/product/{ProductID}/colors/{Color}/priority/{PriorityTestArg}": {
+			"POST": {
+				"Bean": "Relaxation.UnitTests.ProductService"
+				,"Method": "JustForPatternMatchTesting"
+			}
+		}
+		,"/product/do/nothing": {
+			"GET": {
+				"Bean": "Relaxation.UnitTests.ProductService"
+				,"Method": "returnNothing"
+			}
+		}
+	}
+}
