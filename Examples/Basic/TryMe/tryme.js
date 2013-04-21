@@ -69,6 +69,28 @@ $(function() {
 		});
 	});
 	
+	$('.getProductItemVerbOptions').on('click', function() {
+		var $this = $(this);
+		$.ajax({
+			url: '/Relaxation/Examples/Basic/index.cfm/product/1',
+			type: 'OPTIONS',
+			complete: function(xhr){
+				showResponse($this, xhr.getResponseHeader('Allow'));
+			}
+		});
+	});
+	
+	$('.getProductVerbOptions').on('click', function() {
+		var $this = $(this);
+		$.ajax({
+			url: '/Relaxation/Examples/Basic/index.cfm/product',
+			type: 'OPTIONS',
+			complete: function(xhr){
+				showResponse($this, xhr.getResponseHeader('Allow'));
+			}
+		});
+	});
+	
 	$('.addProduct').on('click', function() {
 		var $this = $(this);
 		var product = {

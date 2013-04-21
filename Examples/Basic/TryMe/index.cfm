@@ -30,6 +30,23 @@
 		<div class="well">
 			<p>
 				<div>Resource: /product</div>
+				<div>Method: OPTIONS</div>
+			</p>
+			<button class="btn btn-primary btn-large getProductVerbOptions">Get OPTIONS</button>
+			<div class="response">
+				<div>
+					<h4>Response</h4>
+					<div class="collapseResponse"><button class="btn">Collapse Response</button></div>
+				</div>
+				<div class="responseContent">
+					<pre></pre>
+				</div>
+			</div>
+		</div>
+		
+		<div class="well">
+			<p>
+				<div>Resource: /product</div>
 				<div>Method: GET</div>
 			</p>
 			<button class="btn btn-primary btn-large getProducts">Get Products</button>
@@ -70,6 +87,22 @@
 		</div>
 		
 		<h3>Product Item</h3>
+		<div class="well">
+			<p>
+				<div>Resource: /product/{ProductID}</div>
+				<div>Method: OPTIONS</div>
+			</p>
+			<button class="btn btn-primary btn-large getProductItemVerbOptions">Get OPTIONS</button>
+			<div class="response">
+				<div>
+					<h4>Response</h4>
+					<div class="collapseResponse"><button class="btn">Collapse Response</button></div>
+				</div>
+				<div class="responseContent">
+					<pre></pre>
+				</div>
+			</div>
+		</div>
 		<div class="well">
 			<p>
 				<div>Resource: /product/{ProductID}</div>
