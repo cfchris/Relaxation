@@ -51,14 +51,16 @@ component
 	public struct function handleRequest( string Path = CGI.PATH_INFO ) {
 		/* Process the request. */
 		var result = processRequest( ArgumentCollection = arguments );
-		/* Tell the client we are sending JSON. */
-		setResponseContentType('application/json');
 		/* Deal with rendering the result. */
 		if ( result.Success ) {
 			/* Happiness, the request was successful! */
 			setResponseHeader('Allow', result.AllowedVerbs);
-			writeOutput( result.Output );
-			if (len(result.Output) == 0) {
+			if ( len(trim(result.Output)) > 0 ) {
+				/* Tell the client we are sending JSON. */
+				setResponseContentType('application/json');
+				/* Give'em what they asked for. */
+				writeOutput( result.Output );
+			} else {
 				/* No output means a 204 */
 				setResponseStatus(204,'No Content');
 			}
@@ -99,7 +101,9 @@ component
 					break;
 				}
 			}
-			/* output the response */
+			/* Tell the client we are sending JSON. */
+			setResponseContentType('application/json');
+			/* Output the response */
 			setResponseStatus(response.status, response.statusText);
 			writeOutput( SerializeJSON(response) );
 		}
@@ -148,6 +152,10 @@ component
 			return result;
 		}
 		result.AllowedVerbs = resource.AllowedVerbs;
+		if ( arguments.Verb == "OPTIONS" ) {
+			/* They just wanted to know which verbs are supported. We're done. */
+			return result;	
+		}
 		if ( !isNull(getAuthorizationMethod()) ) {
 			var authorize = getAuthorizationMethod();
 			var authArg = {
@@ -250,13 +258,13 @@ component
 		/* Add trailing slash to make matching easier. */
 		arguments.Path &= ( Right(trim(arguments.Path),1) EQ '/' ? '' : '/' );
 		var result = {
-			"Located" = false
+			"AllowedVerbs" = ""
+			,"Located" = false
 			,"Error" = ""
 			,"Path" = ""
 			,"Pattern" = ""
 			,"Regex" = ""
-			,"Verb" = ""
-			,"AllowedVerbs" = ""
+			,"Verb" = arguments.Verb
 		};
 		for ( var resource in variables.Config.Resources ) {
 			if ( RefindNoCase(resource.Regex,arguments.Path) ) {
@@ -268,16 +276,20 @@ component
 			result.Error = "ResourceNotFound";
 		} else {
 			result.AllowedVerbs = match.AllowedVerbs;
+			result.Path = arguments.Path;
+			result.Pattern = match.Pattern;
+			result.Regex = match.Regex;
+			if ( arguments.Verb == "OPTIONS" ) {
+				/* They just want the options. */
+				result.Located = true;
+				return result;
+			}
 			if ( !StructKeyExists(match, arguments.Verb) ) {
 				result.Error = "VerbNotFound";
-			} else {
-				result.Located = true;
-				result.Path = arguments.Path;
-				result.Pattern = match.Pattern;
-				result.Regex = match.Regex;
-				result.Verb = arguments.Verb;
-				StructAppend(result, match[arguments.Verb]);
+				return result;
 			}
+			result.Located = true;
+			StructAppend(result, match[arguments.Verb]);
 		}
 		return result;
 	}
