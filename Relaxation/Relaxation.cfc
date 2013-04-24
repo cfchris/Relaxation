@@ -348,7 +348,7 @@ component
 		if ( isDefined("variables.BeanFactory") ) {
 			return getBeanFactory().getBean(arguments.Bean);
 		} else {
-			return CreateObject("component", arguments.Bean);
+			return CreateObject("component", arguments.Bean).init();
 		}
 	}
 	
