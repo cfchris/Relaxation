@@ -31,7 +31,7 @@ component
 		/* Deal with different types of configs passed in. */
 		arguments.Config = translateConfig( arguments.Config );
 		/* Get the pattern matching for resources setup. */
-		configureResources( arguments.Config.RequestPatterns );
+		configureResources( arguments.Config );
 		/* Always return the object. */
 		return this;
 	}
@@ -225,12 +225,17 @@ component
 	* @hint "I will configure the pattern matching for the different resources."
 	* @output false
 	**/
-	private void function configureResources( required struct Patterns ) {
+	private void function configureResources( required struct Config ) {
+		if ( StructKeyExists(arguments.Config,"RequestPatterns") ) {
+			var Patterns = arguments.Config.RequestPatterns; 
+		} else if ( StructKeyExists(arguments.Config,"Patterns") ) {
+			var Patterns = arguments.Config.Patterns; 
+		}
 		variables.Config.Resources = [];
 		/* By sorting the keys this way, static patterns should take priority over dynamic ones. */
-		var keyList = ListSort(StructKeyList(arguments.Patterns), 'textnocase', 'asc');
+		var keyList = ListSort(StructKeyList(Patterns), 'textnocase', 'asc');
 		for ( var key in ListToArray(keyList) ) {
-			var resource = arguments.Patterns[key];
+			var resource = Patterns[key];
 			/* Build "AllowedVerbs" for "Allow" header. */
 			resource["AllowedVerbs"] = uCase(ListAppend(StructKeyList(resource),"OPTIONS"));
 			resource["AllowedVerbs"] = ListSort(resource["AllowedVerbs"],"textnocase","ASC");
@@ -348,7 +353,12 @@ component
 		if ( isDefined("variables.BeanFactory") ) {
 			return getBeanFactory().getBean(arguments.Bean);
 		} else {
-			return CreateObject("component", arguments.Bean).init();
+			var _bean = CreateObject("component", arguments.Bean);
+			if ( IsDefined("_bean.init") ) {
+				/* It has a constructor. So, call it. */
+				_bean.init();
+			}
+			return _bean;
 		}
 	}
 	
