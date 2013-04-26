@@ -1,0 +1,1 @@
+component{function hi(){return 'hi';}}
