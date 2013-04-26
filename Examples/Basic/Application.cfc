@@ -1,6 +1,6 @@
 component output="false" {
 	
-	this.name = "RelaxationBasicTest";
+	this.name = hash( getCurrentTemplatePath() );
 	
 	/**
 	* @hint "I handle the start of requests. (Make sure Relaxation is setup.)"
