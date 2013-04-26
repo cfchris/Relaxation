@@ -2,7 +2,7 @@
 
 What?
 
-I tweeted the code that it takes to setup and run Relaxation the a while back.
+I tweeted the code that it takes to setup and run Relaxation a while back.
 
 > https://twitter.com/cfchris/status/325422668172128256
 > 
@@ -16,14 +16,14 @@ I think that tweet inspired Adam Tuttle to tweet a fully functional Taffy exampl
 
 > https://twitter.com/cf_taffy/status/327415972581486592
 > 
-> component extends="taffy.core.api"{}
+> component extends="taffy.core.api"{}  
 component extends="taffy.core.resource" taffy_uri="/hi"{function get(){return representationOf('hi');}}
 
 I took that as a challenge. So, I came up with this example for Relaxation.
 
 > https://twitter.com/cfchris/status/327529641923448832  
 > 
-> component{new Relaxation({"Patterns":{"/hi":{"GET":{"Bean":"hi","Method":"hi"}}}}).handleRequest();}
+> component{new Relaxation({"Patterns":{"/hi":{"GET":{"Bean":"hi","Method":"hi"}}}}).handleRequest();}  
 component{function hi(){return 'hi';}}
 
 This folder contains that example.
