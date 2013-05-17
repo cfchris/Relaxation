@@ -203,7 +203,7 @@ component extends="mxunit.framework.TestCase" {
 		assertTrue(!StructIsEmpty(result), "Shoot. The return struct is empty.");
 		assertEquals(true, result.Success);
 		assertTrue(isJSON(result.Output),"Shoot result was not JSON.");
-		assertTrue(FindNoCase("Relaxation REST Framework",result.Output),"Part of the JSON string that should be there IS NOT.");
+		assertTrue(FindNoCase("Hot Sauce!",result.Output),"Part of the JSON string that should be there IS NOT.");
 		/* Test empty response */
 		result = variables.RestFramework.processRequest( Path = "/product/do/nothing", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
 		//debug(result);
@@ -226,7 +226,7 @@ component extends="mxunit.framework.TestCase" {
 		assertTrue(!StructIsEmpty(result), "Shoot. The return struct is empty.");
 		assertEquals(true, result.Success);
 		assertTrue(isJSON(result.Output),"Shoot result was not JSON.");
-		assertTrue(FindNoCase("Relaxation REST Framework",result.Output),"Part of the JSON string that should be there IS NOT.");
+		assertTrue(FindNoCase("Hot Sauce!",result.Output),"Part of the JSON string that should be there IS NOT.");
 	}
 	
 	/*

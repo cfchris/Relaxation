@@ -7,6 +7,7 @@ component
 
 	property name="BeanFactory" type="component";
 	property name="cfmlFunctions" type="component";
+	property name="DocGenerator" type="component";
 	property name="AuthorizationMethod" type="any";
 	property name="OnErrorMethod" type="any";
 	
@@ -19,6 +20,10 @@ component
 	public component function init( required any Config, component BeanFactory, any AuthorizationMethod, any OnErrorMethod ) {
 		/* Set object to handle CFML stuff. */
 		setcfmlFunctions( new cfmlFunctions() );
+		/* Set object to handle Doc Gen stuff. */
+		var dc = new DocGenerator();
+		dc.setRelaxation( this );
+		setDocGenerator( dc );
 		if ( structKeyExists(arguments,'BeanFactory') ) {
 			setBeanFactory( arguments.BeanFactory );
 		}
@@ -30,6 +35,8 @@ component
 		}
 		/* Deal with different types of configs passed in. */
 		arguments.Config = translateConfig( arguments.Config );
+		/* Store raw config. */
+		variables.Config.raw = arguments.Config;
 		/* Get the pattern matching for resources setup. */
 		configureResources( arguments.Config );
 		/* Always return the object. */
@@ -49,6 +56,11 @@ component
 	* @output true
 	**/
 	public struct function handleRequest( string Path = CGI.PATH_INFO ) {
+		/* Handle requests to the root of the API. */
+		if ( ListLast(arguments.Path,"/") EQ 'index.cfm' OR reReplace(arguments.Path, "/$", "") EQ "" ) {
+			/* No resource path specified. Show available resources. */
+			getDocGenerator().renderDocs();
+		}
 		/* Process the request. */
 		var result = processRequest( ArgumentCollection = arguments );
 		/* Deal with rendering the result. */
