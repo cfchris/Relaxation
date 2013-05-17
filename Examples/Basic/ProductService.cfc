@@ -1,7 +1,7 @@
 component displayname="Product Service" hint="I am the testing Product Service" output="false" persistent="false" {
 
 	/**
-	* @hint "I am the constructor"
+	* @hint "I am the constructor."
 	* @output false
 	**/
 	public component function init() {
@@ -14,7 +14,7 @@ component displayname="Product Service" hint="I am the testing Product Service" 
 	}
 	
 	/**
-	* @hint "I return the test products"
+	* @hint "I return the test products."
 	* @output false
 	**/
 	public array function getAllProducts() {
@@ -22,10 +22,10 @@ component displayname="Product Service" hint="I am the testing Product Service" 
 	}
 	
 	/**
-	* @hint "I get a product by its ID"
+	* @hint "I get a product by its ID."
 	* @output false
 	**/
-	public struct function getProductByID( string ProductID ) {
+	public struct function getProductByID( string ProductID = 1 ) {
 		
 		for (var p in variables.Products) {
 			if (p.ProductID == arguments.ProductID) {
@@ -37,7 +37,7 @@ component displayname="Product Service" hint="I am the testing Product Service" 
 	}
 	
 	/**
-	* @hint "I add a product"
+	* @hint "I add a product."
 	* @output false
 	**/
 	public struct function addProduct( struct payload ) {
@@ -54,7 +54,7 @@ component displayname="Product Service" hint="I am the testing Product Service" 
 	}
 	
 	/**
-	* @hint "I save a product"
+	* @hint "I save a product."
 	* @output false
 	**/
 	public struct function saveProduct( numeric ProductID, struct payload ) {
@@ -75,7 +75,7 @@ component displayname="Product Service" hint="I am the testing Product Service" 
 	}
 	
 	/**
-	* @hint "I delete a product"
+	* @hint "I delete a product."
 	* @output false
 	**/
 	public void function deleteProduct( numeric ProductID ) {
@@ -90,7 +90,7 @@ component displayname="Product Service" hint="I am the testing Product Service" 
 	}
 	
 	/**
-	* @hint "I get the next available identifier for a product"
+	* @hint "I get the next available identifier for a product."
 	* @output false
 	**/
 	private numeric function getNextID() {
