@@ -35,6 +35,7 @@ component
 		param name="meta.returntype" default="any";
 		for ( var arg in meta.parameters ) {
 			arg.type = structKeyExists(arg, "type") ? arg.type : 'any';
+			arg.Required = structKeyExists(arg, "required") ? arg.Required : 'false';
 		}
 		return meta;
 	}
