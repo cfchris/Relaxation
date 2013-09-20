@@ -51,11 +51,15 @@ component
 		for ( var verb in ListToArray('GET,PUT,POST,DELETE') ) {
 			if ( StructKeyExists(arguments.Resource, verb) ) {
 				var verbStruct = arguments.Resource[verb];
-				var bean = Relaxation.getBeanFactory().getBean(verbStruct.bean);
-				var method = bean[verbStruct.method];
 				var defaults = StructKeyExists(verbStruct, 'DefaultArguments') ? verbStruct.DefaultArguments : {};
 				var fMeta = {"Verb" = verb, "DefaultArguments" = defaults};
-				StructAppend(fMeta, getFunctionMeta(method));
+				try {
+					var bean = Relaxation.getBeanFactory().getBean(verbStruct.bean);
+					var method = bean[verbStruct.method];
+					StructAppend(fMeta, getFunctionMeta(method));
+				} catch ( any e ) {
+					StructAppend(fMeta, {"error": e.message});
+				}
 				ArrayAppend(meta.Verbs, fMeta);
 			}
 		}
