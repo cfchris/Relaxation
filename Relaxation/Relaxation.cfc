@@ -69,12 +69,11 @@ component
 			setResponseHeader('Allow', result.AllowedVerbs);
 			if ( len(trim(result.CacheHeaderSeconds)) ) {
 				/* Add cache headers. */
-				setResponseHeader('Cache-Control', "max-age=" & val(result.CacheHeaderSeconds));
 				var httpnow = DateConvert('local2Utc',now());
 				var httpexpires = DateAdd('s',val(result.CacheHeaderSeconds),httpnow);
-				var httpdatemask = "ddd, dd mmm yyyy HH:nn:ss";
-				setResponseHeader('Date', DateTimeFormat(httpnow,httpdatemask) & ' GMT');
-				setResponseHeader('Expires', DateTimeFormat(httpexpires,httpdatemask) & ' GMT');
+				setResponseHeader('Cache-Control', "max-age=" & val(result.CacheHeaderSeconds));
+				setResponseHeader('Date', formatHTTPDate(httpnow));
+				setResponseHeader('Expires', formatHTTPDate(httpexpires));
 			}
 			if ( len(trim(result.Output)) > 0 ) {
 				/* Tell the client we are sending JSON. */
@@ -320,6 +319,13 @@ component
 			StructAppend(result, match[arguments.Verb]);
 		}
 		return result;
+	}
+	
+	/**
+	* @hint "I will return a date in the correct format for http headers."
+	**/
+	private string function formatHTTPDate(required date Date) {
+		return DateFormat(arguments.Date,"ddd, dd mmm yyyy") & TimeFormat(arguments.Date,"HH:nn:ss") & ' GMT';
 	}
 	
 	/**
