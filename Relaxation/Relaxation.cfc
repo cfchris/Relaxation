@@ -67,6 +67,15 @@ component
 		if ( result.Success ) {
 			/* Happiness, the request was successful! */
 			setResponseHeader('Allow', result.AllowedVerbs);
+			if ( len(trim(result.CacheHeaderSeconds)) ) {
+				/* Add cache headers. */
+				setResponseHeader('Cache-Control', "max-age=" & val(result.CacheHeaderSeconds));
+				var httpnow = DateConvert('local2Utc',now());
+				var httpexpires = DateAdd('s',val(result.CacheHeaderSeconds),httpnow);
+				var httpdatemask = "ddd, dd mmm yyyy HH:nn:ss";
+				setResponseHeader('Date', DateTimeFormat(httpnow,httpdatemask) & ' GMT');
+				setResponseHeader('Expires', DateTimeFormat(httpexpires,httpdatemask) & ' GMT');
+			}
 			if ( len(trim(result.Output)) > 0 ) {
 				/* Tell the client we are sending JSON. */
 				setResponseContentType('application/json');
@@ -150,6 +159,7 @@ component
 			,"Error" = ""
 			,"ErrorMessage" = ""
 			,"AllowedVerbs" = ""
+			,"CacheHeaderSeconds" = ""
 		};
 		var resource = findResourceConfig( argumentCollection = arguments );
 		if ( !resource.Located ) {
@@ -183,6 +193,7 @@ component
 				return result;
 			}
 		}
+		result.CacheHeaderSeconds = StructKeyExists(resource, "CacheHeaderSeconds") ? resource.CacheHeaderSeconds : "";
 		var bean = getMappedBean(resource.Bean);
 		/* Gather the arguments needed to call the method. */
 		var args = gatherRequestArguments( argumentCollection = arguments, ResourceMatch = resource);
@@ -268,7 +279,7 @@ component
 	}
 	
 	/**
-	* @hint "Give an resource path and verb, I will return the config object."
+	* @hint "Give an resource path and verb, I will return the config object. This will contain everything that was in the (GET,PUT,POST,etc) key in the config."
 	* @output false
 	**/
 	private struct function findResourceConfig( required string Path, required string Verb ) {

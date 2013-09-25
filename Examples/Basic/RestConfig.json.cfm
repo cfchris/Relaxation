@@ -4,6 +4,7 @@
 			"GET": {
 				"Bean": "ProductService"
 				,"Method": "getAllProducts"
+				,"CacheHeaderSeconds": 60
 			},
 			"POST": {
 				"Bean": "ProductService"
