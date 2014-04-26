@@ -9,6 +9,7 @@ component
 	property name="BeanFactory" type="component";
 	property name="cfmlFunctions" type="component";
 	property name="DocGenerator" type="component";
+	property name="HTTPUtil" type="component";
 	property name="OnErrorMethod" type="any";
 	
 	variables.Config = {};
@@ -20,6 +21,8 @@ component
 	public component function init( required any Config, component BeanFactory, any AuthorizationMethod, any OnErrorMethod ) {
 		/* Set object to handle CFML stuff. */
 		setcfmlFunctions( new cfmlFunctions() );
+		/* Set object to handle HTTP response stuff. */
+		setHTTPUtil( new HTTPUtil() );
 		/* Set object to handle Doc Gen stuff. */
 		var dc = new DocGenerator();
 		dc.setRelaxation( this );
@@ -66,23 +69,23 @@ component
 		/* Deal with rendering the result. */
 		if ( result.Success ) {
 			/* Happiness, the request was successful! */
-			setResponseHeader('Allow', result.AllowedVerbs);
+			variables.HTTPUtil.setResponseHeader('Allow', result.AllowedVerbs);
 			if ( len(trim(result.CacheHeaderSeconds)) ) {
 				/* Add cache headers. */
 				var httpnow = DateConvert('local2Utc',now());
 				var httpexpires = DateAdd('s',val(result.CacheHeaderSeconds),httpnow);
 				setResponseHeader('Cache-Control', "max-age=" & val(result.CacheHeaderSeconds));
-				setResponseHeader('Date', formatHTTPDate(httpnow));
-				setResponseHeader('Expires', formatHTTPDate(httpexpires));
+				setResponseHeader('Date', variables.HTTPUtil.formatHTTPDate(httpnow));
+				setResponseHeader('Expires', variables.HTTPUtil.formatHTTPDate(httpexpires));
 			}
 			if ( len(trim(result.Output)) > 0 ) {
 				/* Tell the client we are sending JSON. */
-				setResponseContentType('application/json');
+				variables.HTTPUtil.setResponseContentType('application/json');
 				/* Give'em what they asked for. */
 				writeOutput( result.Output );
 			} else {
 				/* No output means a 204 */
-				setResponseStatus(204,'No Content');
+				variables.HTTPUtil.setResponseStatus(204,'No Content');
 			}
 		} else {
 			/* Provide appropriate error responses. */
@@ -104,7 +107,7 @@ component
 					break;
 				}
 				case "VerbNotFound": {
-					setResponseHeader('Allow', result.AllowedVerbs);
+					variables.HTTPUtil.setResponseHeader('Allow', result.AllowedVerbs);
 					var response = {
 						'status' = 405,
 						'statusText' = 'Method Not Allowed',
@@ -122,9 +125,9 @@ component
 				}
 			}
 			/* Tell the client we are sending JSON. */
-			setResponseContentType('application/json');
+			variables.HTTPUtil.setResponseContentType('application/json');
 			/* Output the response */
-			setResponseStatus(response.status, response.statusText);
+			variables.HTTPUtil.setResponseStatus(response.status, response.statusText);
 			writeOutput( SerializeJSON(response) );
 		}
 		result["Rendered"] = true;
@@ -218,30 +221,6 @@ component
 		return result;
 	}
 	
-	/**
-	* @hint "I set response content type."
-	* @output false
-	**/
-	public void function setResponseContentType( required string ContentType ) {
-		getpagecontext().getresponse().setContentType(JavaCast("string",arguments.ContentType));
-	}
-	
-	/**
-	* @hint "I set response headers."
-	* @output false
-	**/
-	public void function setResponseHeader( required string Header, string HeaderText = "" ) {
-		getpagecontext().getResponse().setHeader(JavaCast("string",arguments.Header), JavaCast("string",arguments.HeaderText));
-	}
-	
-	/**
-	* @hint "I set response status headers."
-	* @output false
-	**/
-	public void function setResponseStatus( required numeric Status, string StatusText = "" ) {
-		getpagecontext().getResponse().setStatus(JavaCast("int",arguments.Status), JavaCast("string",arguments.StatusText));
-	}
-	
 	
 	/*
 	 * PRIVATE UTILITY FUNCTIONS
@@ -324,13 +303,6 @@ component
 			StructAppend(result, match[arguments.Verb]);
 		}
 		return result;
-	}
-	
-	/**
-	* @hint "I will return a date in the correct format for http headers."
-	**/
-	private string function formatHTTPDate(required date Date) {
-		return DateFormat(arguments.Date,"ddd, dd mmm yyyy") & TimeFormat(arguments.Date,"HH:nn:ss") & ' GMT';
 	}
 	
 	/**
