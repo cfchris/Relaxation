@@ -27,6 +27,23 @@ component displayname="Product Service" hint="I am the testing Product Service" 
 	**/
 	public struct function getProductByID( string ProductID = 1 ) {
 		
+		/* Special ID for testing auth code handling */
+		if ( arguments.ProductID == 403 ) {
+			Throw(
+				type = "permission",
+				errorcode = "NotAuthorized",
+				message = "User is not allowed to edit this product."
+			);
+		}
+		/* Special ID for testing "Resource Not Found" handling */
+		if ( arguments.ProductID == 404 ) {
+			Throw(
+				type = "validation",
+				errorcode = "ResourceNotFound",
+				message = "No product could be found given the productID provided."
+			);
+		}
+		
 		for (var p in variables.Products) {
 			if (p.ProductID == arguments.ProductID) {
 				return p;

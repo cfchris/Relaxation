@@ -5,10 +5,10 @@ component
 	output="false"
 {
 
+	property name="AuthorizationMethod" type="any";
 	property name="BeanFactory" type="component";
 	property name="cfmlFunctions" type="component";
 	property name="DocGenerator" type="component";
-	property name="AuthorizationMethod" type="any";
 	property name="OnErrorMethod" type="any";
 	
 	variables.Config = {};
@@ -202,6 +202,11 @@ component
 		} catch (Any e) {
 			result.Success = false;
 			result.ErrorMessage = e.Message;
+			/* Allow called methods to throw special ErrorCodes to get specific HTTP status codes. */
+			if ( ListFindNoCase("NotAuthorized,ResourceNotFound", e.ErrorCode) ) {
+				result.Error = e.ErrorCode;
+				return result;
+			}
 			if ( !isNull(getOnErrorMethod()) ) {
 				var onError = getOnErrorMethod();
 				onError(e, resource, args);
