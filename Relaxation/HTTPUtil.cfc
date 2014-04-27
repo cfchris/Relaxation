@@ -6,6 +6,13 @@ component
 {
 	
 	/**
+	* @hint "I will return a date in the correct format for http headers."
+	**/
+	public string function formatHTTPDate(required date Date) {
+		return DateFormat(arguments.Date,"ddd, dd mmm yyyy") & TimeFormat(arguments.Date,"HH:nn:ss") & ' GMT';
+	}
+	
+	/**
 	* @hint "I return a struct containing the user and password decoded from the Authorization header."
 	**/
 	public any function getBasicAuthCredentials() {
@@ -29,10 +36,11 @@ component
 	}
 	
 	/**
-	* @hint "I will return a date in the correct format for http headers."
+	* @hint "I will set appropriate response headers to prompt clients for basic auth credentials."
 	**/
-	public string function formatHTTPDate(required date Date) {
-		return DateFormat(arguments.Date,"ddd, dd mmm yyyy") & TimeFormat(arguments.Date,"HH:nn:ss") & ' GMT';
+	public void function promptForBasicAuth( string Realm = "REST API" ) {
+		setResponseHeader( "WWW-Authenticate", 'basic realm="' & arguments.Realm & '"' );
+		setResponseStatus( 401, "Unauthorized" );
 	}
 	
 	/**

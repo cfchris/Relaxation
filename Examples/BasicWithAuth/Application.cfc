@@ -34,11 +34,9 @@ component output="false" {
 	* @hint "I handle requests. (Route requests using Relaxation.)"
 	**/
 	public void function onRequest() {
-		var util = application.REST.getHTTPUtil();
-		var auth = util.getBasicAuthCredentials();
+		var auth = application.REST.getHTTPUtil().getBasicAuthCredentials();
 		if ( IsNull(auth) || !(auth.user == "Maxin" && auth.password == "Relaxin") ) {
-			util.setResponseHeader( "WWW-Authenticate", 'basic realm="API Demo"' );
-			util.setResponseStatus( 401, "Unauthorized" );
+			application.REST.getHTTPUtil().promptForBasicAuth( "API Demo" );
 		} else {
 			application.REST.handleRequest();
 		}
