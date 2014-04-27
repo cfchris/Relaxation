@@ -70,9 +70,9 @@ component
 				/* Add cache headers. */
 				var httpnow = DateConvert('local2Utc',now());
 				var httpexpires = DateAdd('s',val(result.CacheHeaderSeconds),httpnow);
-				setResponseHeader('Cache-Control', "max-age=" & val(result.CacheHeaderSeconds));
-				setResponseHeader('Date', variables.HTTPUtil.formatHTTPDate(httpnow));
-				setResponseHeader('Expires', variables.HTTPUtil.formatHTTPDate(httpexpires));
+				variables.HTTPUtil.setResponseHeader('Cache-Control', "max-age=" & val(result.CacheHeaderSeconds));
+				variables.HTTPUtil.setResponseHeader('Date', variables.HTTPUtil.formatHTTPDate(httpnow));
+				variables.HTTPUtil.setResponseHeader('Expires', variables.HTTPUtil.formatHTTPDate(httpexpires));
 			}
 			if ( len(trim(result.Output)) > 0 ) {
 				/* Tell the client we are sending JSON. */
