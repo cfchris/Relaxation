@@ -6,6 +6,29 @@ component
 {
 	
 	/**
+	* @hint "I return a struct containing the user and password decoded from the Authorization header."
+	**/
+	public any function getBasicAuthCredentials() {
+		try {
+			var auth = ToString(ToBinary(ListRest(getRequestHeaders().Authorization, " ")));
+			return {
+				"user" = ListFirst(auth,":"),
+				"password" = ListRest(auth,":")
+			};
+		}
+		catch ( any e ) {
+			return JavaCast("null", "");
+		}
+	}
+	
+	/**
+	* @hint "I return the HTTP headers for the current request."
+	**/
+	public struct function getRequestHeaders() {
+		return GetHTTPRequestData().Headers;
+	}
+	
+	/**
 	* @hint "I will return a date in the correct format for http headers."
 	**/
 	public string function formatHTTPDate(required date Date) {
@@ -14,7 +37,6 @@ component
 	
 	/**
 	* @hint "I set response content type."
-	* @output false
 	**/
 	public void function setResponseContentType( required string ContentType ) {
 		getpagecontext().getresponse().setContentType(JavaCast("string",arguments.ContentType));
@@ -22,7 +44,6 @@ component
 	
 	/**
 	* @hint "I set response headers."
-	* @output false
 	**/
 	public void function setResponseHeader( required string Header, string HeaderText = "" ) {
 		getpagecontext().getResponse().setHeader(JavaCast("string",arguments.Header), JavaCast("string",arguments.HeaderText));
@@ -30,7 +51,6 @@ component
 	
 	/**
 	* @hint "I set response status headers."
-	* @output false
 	**/
 	public void function setResponseStatus( required numeric Status, string StatusText = "" ) {
 		getpagecontext().getResponse().setStatus(JavaCast("int",arguments.Status), JavaCast("string",arguments.StatusText));
