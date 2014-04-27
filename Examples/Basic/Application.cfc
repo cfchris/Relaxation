@@ -1,25 +1,37 @@
 component output="false" {
 	
 	this.name = hash( getCurrentTemplatePath() );
+	this.ApplicationTimeout = CreateTimeSpan(0,0,30,0);
 	
 	/**
-	* @hint "I handle the start of requests. (Make sure Relaxation is setup.)"
-	* @output true
+	* @hint "I handle the Application Start event."
 	**/
-	public function onRequestStart() {
-		if ( isDefined("url.Reinit") || isNull(application.REST) ) {
+	public boolean function onApplicationStart() {
+		try {
 			application.BeanFactory = new TestFactory();
 			var Relaxation = new Relaxation.Relaxation.Relaxation( "./RestConfig.json.cfm" );
 			Relaxation.setBeanFactory( application.BeanFactory );
 			Relaxation.setOnErrorMethod( handleError );
 			Relaxation.setAuthorizationMethod( handleAuth );
 			application.REST = Relaxation;
+			return true;
+		}
+		catch ( any e ) {
+			return false;
+		}
+	}
+	
+	/**
+	* @hint "I handle the start of requests. (Make sure Relaxation is setup.)"
+	**/
+	public function onRequestStart() {
+		if ( isDefined("url.Reinit") || isNull(application.REST) ) {
+			onApplicationStart();
 		}
 	}
 	
 	/**
 	* @hint "I handle requests. (Route requests using Relaxation.)"
-	* @output true
 	**/
 	public void function onRequest() {
 		application.REST.handleRequest();
