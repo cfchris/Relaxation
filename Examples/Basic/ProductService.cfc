@@ -2,7 +2,6 @@ component displayname="Product Service" hint="I am the testing Product Service" 
 
 	/**
 	* @hint "I am the constructor."
-	* @output false
 	**/
 	public component function init() {
 		variables.Products = [
@@ -15,7 +14,6 @@ component displayname="Product Service" hint="I am the testing Product Service" 
 	
 	/**
 	* @hint "I return the test products."
-	* @output false
 	**/
 	public array function getAllProducts() {
 		return variables.Products;
@@ -23,9 +21,17 @@ component displayname="Product Service" hint="I am the testing Product Service" 
 	
 	/**
 	* @hint "I get a product by its ID."
-	* @output false
 	**/
 	public struct function getProductByID( string ProductID = 1 ) {
+		
+		/* Special ID for testing auth code handling */
+		if ( arguments.ProductID == 403 ) {
+			Throw(
+				type = "permission",
+				errorcode = "NotAuthorized",
+				message = "User is not allowed to edit this product."
+			);
+		}
 		
 		for (var p in variables.Products) {
 			if (p.ProductID == arguments.ProductID) {
@@ -33,12 +39,16 @@ component displayname="Product Service" hint="I am the testing Product Service" 
 			}	
 		}
 		
-		return {};
+		/* For testing "Resource Not Found" handling */
+		Throw(
+			type = "validation",
+			errorcode = "ResourceNotFound",
+			message = "No product could be found given the productID provided."
+		);
 	}
 	
 	/**
 	* @hint "I add a product."
-	* @output false
 	**/
 	public struct function addProduct( struct payload ) {
 		
@@ -55,7 +65,6 @@ component displayname="Product Service" hint="I am the testing Product Service" 
 	
 	/**
 	* @hint "I save a product."
-	* @output false
 	**/
 	public struct function saveProduct( numeric ProductID, struct payload ) {
 		
@@ -76,7 +85,6 @@ component displayname="Product Service" hint="I am the testing Product Service" 
 	
 	/**
 	* @hint "I delete a product."
-	* @output false
 	**/
 	public void function deleteProduct( numeric ProductID ) {
 		
@@ -91,7 +99,6 @@ component displayname="Product Service" hint="I am the testing Product Service" 
 	
 	/**
 	* @hint "I get the next available identifier for a product."
-	* @output false
 	**/
 	private numeric function getNextID() {
 		var ProductID = 0;

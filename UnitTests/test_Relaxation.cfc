@@ -179,7 +179,8 @@ component extends="mxunit.framework.TestCase" {
 	* @output false
 	**/
 	public void function handleRequest_should_work() {
-		injectMethod(variables.RestFramework, this, "doNothing", "setResponseStatus");
+		var httpUtil = variables.RestFramework.getHTTPUtil();
+		injectMethod(local.httpUtil, this, "doNothing", "setResponseStatus");
 		/* Test good response */
 		var result = variables.RestFramework.handleRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
 		assertIsStruct(result);

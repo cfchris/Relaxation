@@ -1,7 +1,6 @@
 component
 	accessors="true"
 	hint="I help gather meta data for and generate API docs."
-	output="false"
 {
 	property name="Relaxation" type="component";
 	
@@ -68,7 +67,6 @@ component
 	
 	/**
 	* @hint "I will render the API docs."
-	* @output true
 	**/
 	package void function renderDocs() {
 		var docMeta = getFullMeta();
