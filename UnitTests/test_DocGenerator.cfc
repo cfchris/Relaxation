@@ -95,7 +95,6 @@ component extends="mxunit.framework.TestCase" {
 	
 	/**
 	* @hint "I return a mock BeanFactory for testing."
-	* @output false
 	**/
 	private any function getBeanFactory() {
 		var bf = Mock();

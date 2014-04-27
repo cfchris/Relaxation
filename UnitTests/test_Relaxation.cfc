@@ -22,7 +22,6 @@ component extends="mxunit.framework.TestCase" {
 	
 	/**
 	* @hint "I test that the Authorization hook works."
-	* @output false
 	**/
 	public void function authorization_hook_should_work() {
 		
@@ -44,7 +43,6 @@ component extends="mxunit.framework.TestCase" {
 	
 	/**
 	* @hint "I test all of the different styles of Config args."
-	* @output false
 	**/
 	public void function different_config_types_should_work() {
 		makePublic(variables.RestFramework,"translateConfig");
@@ -73,7 +71,6 @@ component extends="mxunit.framework.TestCase" {
 	
 	/**
 	* @hint "I test that a valid exception is thrown if an invalid config is supplied."
-	* @output false
 	**/
 	public void function expect_invalidpath_config_exception() {
 		expectException("Relaxation.Config.InvalidPath");
@@ -84,7 +81,6 @@ component extends="mxunit.framework.TestCase" {
 	
 	/**
 	* @hint "I test findResourceConfig in the positive sense."
-	* @output false
 	**/
 	public void function findResourceConfig_should_find_existing_configs() {
 		makePublic(variables.RestFramework,"findResourceConfig");
@@ -115,7 +111,6 @@ component extends="mxunit.framework.TestCase" {
 	
 	/**
 	* @hint "I test findResourceConfig in the negative sense."
-	* @output false
 	**/
 	public void function findResourceConfig_should_not_find_nonexisting_configs() {
 		makePublic(variables.RestFramework,"findResourceConfig");
@@ -135,7 +130,6 @@ component extends="mxunit.framework.TestCase" {
 	
 	/**
 	* @hint "I test gatherRequestArguments."
-	* @output false
 	**/
 	public void function gatherRequestArguments_should_work() {
 		makePublic(variables.RestFramework,"findResourceConfig");
@@ -176,7 +170,6 @@ component extends="mxunit.framework.TestCase" {
 	
 	/**
 	* @hint "I test handleRequest."
-	* @output false
 	**/
 	public void function handleRequest_should_work() {
 		var httpUtil = variables.RestFramework.getHTTPUtil();
@@ -196,7 +189,6 @@ component extends="mxunit.framework.TestCase" {
 	
 	/**
 	* @hint "I test processRequest."
-	* @output false
 	**/
 	public void function processRequest_should_work() {
 		var result = variables.RestFramework.processRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
@@ -216,7 +208,6 @@ component extends="mxunit.framework.TestCase" {
 	
 	/**
 	* @hint "I test processRequest WITHOUT a BeanFactory."
-	* @output false
 	**/
 	public void function processRequest_should_work_without_BeanFactory() {
 		/* Create new instance with NO bean factory. */
@@ -236,7 +227,6 @@ component extends="mxunit.framework.TestCase" {
 	
 	/**
 	* @hint "I return a mock BeanFactory for testing."
-	* @output false
 	**/
 	private any function getBeanFactory() {
 		var bf = Mock();
@@ -247,7 +237,6 @@ component extends="mxunit.framework.TestCase" {
 	
 	/**
 	* @hint "I get the test Rest Framework config"
-	* @output false
 	**/
 	private struct function getFrameworkConfig() {
 		return DeserializeJSON(fileRead(expandPath(variables.ConfigPath)));
@@ -255,7 +244,6 @@ component extends="mxunit.framework.TestCase" {
 	
 	/**
 	* @hint "I return false."
-	* @output false
 	**/
 	private boolean function returnFalse() {
 		return false;
@@ -263,7 +251,6 @@ component extends="mxunit.framework.TestCase" {
 	
 	/**
 	* @hint "I return true."
-	* @output false
 	**/
 	private boolean function returnTrue() {
 		return true;
@@ -271,7 +258,6 @@ component extends="mxunit.framework.TestCase" {
 	
 	/**
 	* @hint "I do nothing."
-	* @output false
 	**/
 	private void function doNothing() {
 		/* Do nothing. */

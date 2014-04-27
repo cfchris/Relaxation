@@ -1,11 +1,9 @@
 component
 	displayname="Example Error Logger" 
 	hint="I log errors for the Relaxation basic example."
-	output="false"
 {
 	/**
 	 * @Hint "I am the constructor."
-	 * @Output false
 	 **/
 	public component function init() {
 		return this;
@@ -13,7 +11,6 @@ component
 	
 	/**
 	 * @Hint "I handle logging an error."
-	 * @Output false
 	 **/
 	public void function logError( required any Error ) {
 		var msg = arguments.Error.Message;
@@ -25,7 +22,6 @@ component
 	
 	/**
 	 * @Hint "I write to a log file."
-	 * @Output false
 	 **/
 	private void function writeToLog( required string Message ) {
 		writeLog( file = "RelaxationExamples", text = arguments.Message );

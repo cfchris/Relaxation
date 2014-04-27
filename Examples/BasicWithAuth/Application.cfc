@@ -46,7 +46,6 @@ component output="false" {
 	
 	/**
 	* @hint "I handle errors."
-	* @output false
 	**/
 	private void function handleError(Any e) {
 		application.BeanFactory.getBean("ErrorLogger").logError( arguments.e );

@@ -2,7 +2,6 @@ component
 	accessors="true"
 	displayname="Relaxation REST Framework"
 	hint="I am the Relaxation framework for REST in CF. Relax, I got this!"
-	output="false"
 {
 
 	property name="BeanFactory" type="component";
@@ -14,7 +13,6 @@ component
 	
 	/**
 	* @hint "I initialize the object and get the routing all setup."
-	* @output false
 	**/
 	public component function init( required any Config, component BeanFactory, any AuthorizationMethod, any OnErrorMethod ) {
 		/* Set object to handle CFML stuff. */
@@ -38,7 +36,6 @@ component
 	
 	/**
 	* @hint "I return the configuration structure."
-	* @output false
 	**/
 	public struct function getConfig() {
 		return variables.Config;
@@ -46,7 +43,6 @@ component
 	
 	/**
 	* @hint "I will handle a REST request including appropriate output and headers."
-	* @output true
 	**/
 	public struct function handleRequest( string Path = CGI.PATH_INFO ) {
 		/* Process the request. */
@@ -113,7 +109,6 @@ component
 	
 	/**
 	* @hint "I will process a REST request. Given the requested path and verb, I will call the correct resource and method."
-	* @output false
 	**/
 	public struct function processRequest(
 		string Path = CGI.PATH_INFO,
@@ -193,7 +188,6 @@ component
 	
 	/**
 	* @hint "I set response content type."
-	* @output false
 	**/
 	public void function setResponseContentType( required string ContentType ) {
 		getpagecontext().getresponse().setContentType(JavaCast("string",arguments.ContentType));
@@ -201,7 +195,6 @@ component
 	
 	/**
 	* @hint "I set response headers."
-	* @output false
 	**/
 	public void function setResponseHeader( required string Header, string HeaderText = "" ) {
 		getpagecontext().getResponse().setHeader(JavaCast("string",arguments.Header), JavaCast("string",arguments.HeaderText));
@@ -209,7 +202,6 @@ component
 	
 	/**
 	* @hint "I set response status headers."
-	* @output false
 	**/
 	public void function setResponseStatus( required numeric Status, string StatusText = "" ) {
 		getpagecontext().getResponse().setStatus(JavaCast("int",arguments.Status), JavaCast("string",arguments.StatusText));
@@ -223,7 +215,6 @@ component
 	
 	/**
 	* @hint "I will configure the pattern matching for the different resources."
-	* @output false
 	**/
 	private void function configureResources( required struct Config ) {
 		if ( StructKeyExists(arguments.Config,"RequestPatterns") ) {
@@ -257,7 +248,6 @@ component
 	
 	/**
 	* @hint "Give an resource path and verb, I will return the config object."
-	* @output false
 	**/
 	private struct function findResourceConfig( required string Path, required string Verb ) {
 		/* Add trailing slash to make matching easier. */
@@ -301,7 +291,6 @@ component
 	
 	/**
 	* @hint "I will gather all the request arguments up from the possible sources. (URL, Form, URI, Request Body)"
-	* @output false
 	**/
 	private struct function gatherRequestArguments( required struct ResourceMatch, string RequestBody = "", struct URLScope = {}, struct FormScope = {} ) {
 		/* Grab the DefaultArguments if they exist. */
@@ -347,7 +336,6 @@ component
 	
 	/**
 	* @hint "I will get the bean from the BeanFactory or as a new object."
-	* @output false
 	**/
 	private component function getMappedBean( required string Bean ) {
 		if ( isDefined("variables.BeanFactory") ) {
@@ -363,7 +351,6 @@ component
 	
 	/**
 	* @hint "I will handle any type of config passed in."
-	* @output false
 	**/
 	private struct function translateConfig( required any Config ) {
 		/* Deal with different types of configs passed in. */

@@ -41,3 +41,5 @@ To make this work (because it REALLY does), I had to:
 * Run it in the pseudo-constructor of the Application.cfc
 
 So, pretty much, don't use this as the example for your API!
+
+NOTE: I don't ever plan on updating this code. It's going to forever use an old version of Relaxation.
