@@ -231,7 +231,6 @@ component
 				var resultOutput = SerializeJSON(methodResult);
 			} else {
 				var resultOutput = SerializeJSON({"#resource.WrapSimpleValues.objectProperty#": methodResult});
-				request.debug(resultOutput);
 			}
 			
 			result.Output = resultOutput;
