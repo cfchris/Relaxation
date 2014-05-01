@@ -12,21 +12,17 @@ component
 	property name="OnErrorMethod" type="any";
 	
 	variables.Config = {};
+	variables.Defaults = {
+		'WrapSimpleValues': {
+			"enabled": "true",
+			"objectProperty": "result"
+		}
+	};
 	
 	/**
 	* @hint "I initialize the object and get the routing all setup."
 	**/
 	public component function init( required any Config, component BeanFactory, any AuthorizationMethod, any OnErrorMethod ) {
-		var defaultSimpleValueSettings = {
-			"enabled": "true",
-			"objectProperty": "result"
-		};
-		variables.Defaults = {
-			'Config': {
-				'WrapSimpleValues': defaultSimpleValueSettings
-			}
-		};
-		
 		/* Set object to handle CFML stuff. */
 		setcfmlFunctions( new cfmlFunctions() );
 		/* Set object to handle HTTP response stuff. */
@@ -59,6 +55,13 @@ component
 	**/
 	public struct function getConfig() {
 		return variables.Config;
+	}
+	
+	/**
+	* @hint "I return the defaults structure."
+	**/
+	public struct function getDefaults() {
+		return variables.Defaults;
 	}
 	
 	/**
@@ -224,15 +227,20 @@ component
 		}
 		
 		if ( isDefined("methodResult") ) {
-			if( isStruct(methodResult) || isObject(methodResult) || isArray(methodResult) ) {
+			if( isStruct(methodResult) || isObject(methodResult) || isArray(methodResult) || !resource.WrapSimpleValues.enabled ) {
 				var resultOutput = SerializeJSON(methodResult);
 			} else {
-				var resultOutput = SerializeJSON({result.DefaultSimpleProperty: methodResult});
+				var resultOutput = SerializeJSON({"#resource.WrapSimpleValues.objectProperty#": methodResult});
+				request.debug(resultOutput);
 			}
 			
-			result.Output = SerializeJSON(methodResult);
+			result.Output = resultOutput;
 		} else {
-			result.Output = "{}";
+			if( resource.WrapSimpleValues.enabled ) {
+				result.Output = "{}";
+			} else {
+				result.Output = "";
+			}
 		}
 		
 		return result;
@@ -258,7 +266,6 @@ component
 		var keyList = ListSort(StructKeyList(Patterns), 'textnocase', 'asc');
 		for ( var key in ListToArray(keyList) ) {
 			var resource = Patterns[key];
-			
 			/* Build "AllowedVerbs" for "Allow" header. */
 			resource["AllowedVerbs"] = uCase(ListAppend(StructKeyList(resource),"OPTIONS"));
 			resource["AllowedVerbs"] = ListSort(resource["AllowedVerbs"],"textnocase","ASC");
@@ -283,8 +290,8 @@ component
 					if ( !structKeyExists(resource[resourceKey], "WrapSimpleValues") ) {
 						resource[resourceKey]["WrapSimpleValues"] = {};
 					}
-					structAppend(arguments.Config.WrapSimpleValues, variables.Defaults.Config.WrapSimpleValues, false);
-					structAppend(resource[resourceKey].WrapSimpleValues, Config.WrapSimpleValues, false);
+					structAppend(arguments.Config.WrapSimpleValues, variables.Defaults.WrapSimpleValues, false);
+					structAppend(resource[resourceKey].WrapSimpleValues, arguments.Config.WrapSimpleValues, false);
 				}
 			}
 			
@@ -436,6 +443,6 @@ component
 			"DELETE",
 			"TRACE",
 			"CONNECT"
-	 	];
-	 }
+		];
+	}
 }

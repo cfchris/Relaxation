@@ -203,7 +203,7 @@ component extends="mxunit.framework.TestCase" {
 		assertIsStruct(result);
 		assertTrue(!StructIsEmpty(result), "Shoot. The return struct is empty.");
 		assertEquals(true, result.Success);
-		assertEquals("", result.Output);
+		assertEquals("{}", result.Output);
 	}
 	
 	/**
@@ -222,48 +222,19 @@ component extends="mxunit.framework.TestCase" {
 	}
 	
 	/**
-	 * @hint I test translateConfig and make sure it functions as expected/desired
+	 * @hint I test that the WrapSimpleValues portion of the configuration works properly
 	 **/
-	public void function test_translateConfig() {
-		var testJson = '{
+	public void function wrap_simple_values_config_should_work() {
+		var testConfig = {
 			"WrapSimpleValues": {
 				"enabled": true,
-				"objectProperty": "result"
+				"objectProperty": "requestResult"
 			},
 			"RequestPatterns": {
-				"/customer/{customerID}/": {
+				"/customer/{ProductID}/": {
 					"GET": {
-						"Bean": "CustomerService",
-						"Method": "getCustomer"
-					},
-					"PUT": {
-						"Bean": "CustomerService",
-						"Method": "updateCustomer"
-					}
-				}
-			}
-		}';
-		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testJson); 
-		makePublic(local.relaxationInstance, "translateConfig");
-		
-		var configResult = relaxationInstance.translateConfig(testJson);
-		debug(configResult);
-	}
-	
-	/**
-	 * @hint 
-	 **/
-	public void function wrap_simple_values_enabled_should_work() {
-		var testJson = '{
-			"WrapSimpleValues": {
-				"enabled": true,
-				"objectProperty": "result"
-			},
-			"RequestPatterns": {
-				"/customer/{customerID}/": {
-					"GET": {
-						"Bean": "CustomerService",
-						"Method": "getCustomer",
+						"Bean": "ProductService",
+						"Method": "getProductByID",
 						"WrapSimpleValues": {
 							"enabled": false
 						}
@@ -277,19 +248,74 @@ component extends="mxunit.framework.TestCase" {
 					}
 				}
 			}
-		}';
-		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testJson); 
+		};
+		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testConfig);
+		var config = relaxationInstance.getConfig();
+
+		assertEquals(config.Resources[1].GET.WrapSimpleValues.enabled, false);
+		assertEquals(config.Resources[1].GET.WrapSimpleValues.objectProperty, 'requestResult');
 		
-		makePublic(relaxationInstance, "translateConfig");
-		var config = relaxationInstance.translateConfig(testJson);
+		assertEquals(config.Resources[1].PUT.WrapSimpleValues.enabled, true);
+		assertEquals(config.Resources[1].PUT.WrapSimpleValues.objectProperty, 'id');
+	}
+	
+	/**
+	 * @hint 
+	 **/
+	public void function wrap_simple_values_should_work() {
+		var defaultObjectProperty = "requestResult";
 		
-		debug("In wrap_simple_values_enabled_should_work... config:");
-		debug(config);
+		var testConfig = {
+			"WrapSimpleValues": {
+				"enabled": true,
+				"objectProperty": defaultObjectProperty
+			},
+			"RequestPatterns": {
+				"/product/{ProductID}/": {
+					"GET": {
+						"Bean": "ProductService",
+						"Method": "getProductByID",
+						"WrapSimpleValues": {
+							"enabled": false
+						}
+					},
+					"PUT": {
+						"Bean": "CustomerService",
+						"Method": "saveProduct",
+						"WrapSimpleValues": {
+							"objectProperty": "id"
+						}
+					}
+				},
+				"/product/{ProductID}/price": {
+					"GET": {
+						"Bean": "ProductService",
+						"Method": "getProductPrice",
+						"WrapSimpleValues": {
+							"enabled": true
+						}
+					}
+				},
+				"/product/{ProductID}/price/raw": {
+					"GET": {
+						"Bean": "ProductService",
+						"Method": "getProductPrice",
+						"WrapSimpleValues": {
+							"enabled": false
+						}
+					}
+				}
+			}
+		};
+		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testConfig, getBeanFactory());
 		
-		makePublic(relaxationInstance, "configureResources");
-		relaxationInstance.configureResources(config);
-		
-		//debug(relaxationInstance.getConfig());
+		// test simple value wrapping behavior
+		result = local.relaxationInstance.processRequest( Path = "/product/1/price", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
+		assertEquals(serializeJson({"#defaultObjectProperty#":"$7.99"}), result.output);
+
+		// test the legacy behavior of returning the raw simple value
+		result = local.relaxationInstance.processRequest( Path = "/product/1/price/raw", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
+		assertEquals('"$7.99"', result.output);
 	}
 	
 	
