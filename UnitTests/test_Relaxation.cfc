@@ -260,9 +260,43 @@ component extends="mxunit.framework.TestCase" {
 	}
 	
 	/**
-	 * @hint 
+	 * @hint I test that the WrapSimpleValues portion of the configuration works properly
 	 **/
-	public void function wrap_simple_values_should_work() {
+	public void function wrap_simple_values_default_config_should_work() {
+		var testConfig = {
+			"RequestPatterns": {
+				"/customer/{ProductID}/": {
+					"GET": {
+						"Bean": "ProductService",
+						"Method": "getProductByID",
+						"WrapSimpleValues": {
+							"enabled": false
+						}
+					},
+					"PUT": {
+						"Bean": "CustomerService",
+						"Method": "updateCustomer",
+						"WrapSimpleValues": {
+							"objectProperty": "id"
+						}
+					}
+				}
+			}
+		};
+		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testConfig);
+		var config = relaxationInstance.getConfig();
+
+		assertEquals(config.Resources[1].GET.WrapSimpleValues.enabled, false);
+		assertEquals(config.Resources[1].GET.WrapSimpleValues.objectProperty, 'result');
+		
+		assertEquals(config.Resources[1].PUT.WrapSimpleValues.enabled, true);
+		assertEquals(config.Resources[1].PUT.WrapSimpleValues.objectProperty, 'id');
+	}
+	
+	/**
+	 * @hint I test that top-level WrapSimpleValues settings properly cascace into verb-level ones
+	 **/
+	public void function wrap_simple_values_top_setting_should_cascade_properly() {
 		var defaultObjectProperty = "requestResult";
 		
 		var testConfig = {
@@ -308,6 +342,60 @@ component extends="mxunit.framework.TestCase" {
 			}
 		};
 		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testConfig, getBeanFactory());
+		
+		// test simple value wrapping behavior
+		result = local.relaxationInstance.processRequest( Path = "/product/1/price", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
+		assertEquals(serializeJson({"#defaultObjectProperty#":"$7.99"}), result.output);
+
+		// test the legacy behavior of returning the raw simple value
+		result = local.relaxationInstance.processRequest( Path = "/product/1/price/raw", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
+		assertEquals('"$7.99"', result.output);
+	}
+	
+	/**
+	 * @hint I test that top-level WrapSimpleValues settings properly cascace into verb-level ones
+	 **/
+	public void function wrap_simple_values_default_behavior_should_cascade_properly() {
+		var testConfig = {
+			"RequestPatterns": {
+				"/product/{ProductID}/": {
+					"GET": {
+						"Bean": "ProductService",
+						"Method": "getProductByID",
+						"WrapSimpleValues": {
+							"enabled": false
+						}
+					},
+					"PUT": {
+						"Bean": "CustomerService",
+						"Method": "saveProduct",
+						"WrapSimpleValues": {
+							"objectProperty": "id"
+						}
+					}
+				},
+				"/product/{ProductID}/price": {
+					"GET": {
+						"Bean": "ProductService",
+						"Method": "getProductPrice",
+						"WrapSimpleValues": {
+							"enabled": true
+						}
+					}
+				},
+				"/product/{ProductID}/price/raw": {
+					"GET": {
+						"Bean": "ProductService",
+						"Method": "getProductPrice",
+						"WrapSimpleValues": {
+							"enabled": false
+						}
+					}
+				}
+			}
+		};
+		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testConfig, getBeanFactory());
+		var defaultObjectProperty = relaxationInstance.getDefaults().WrapSimpleValues.objectProperty;
 		
 		// test simple value wrapping behavior
 		result = local.relaxationInstance.processRequest( Path = "/product/1/price", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
