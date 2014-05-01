@@ -14,7 +14,7 @@ component
 	/**
 	* @hint "I gather all of the documentation meta data for all of the resources."
 	**/
-	package array function getFullMeta() {
+	public array function getFullMeta() {
 		var config = Relaxation.getConfig();
 		var fullMeta = [];
 		for ( var resource in config.Resources ) {
@@ -26,7 +26,7 @@ component
 	/**
 	* @hint "Given a function reference, I return the function metadata."
 	**/
-	package struct function getFunctionMeta( required any _function ) {
+	public struct function getFunctionMeta( required any _function ) {
 		var meta = getMetaData(arguments._function);
 		param name="meta.access" default="public";
 		param name="meta.hint" default="";
@@ -42,7 +42,7 @@ component
 	/**
 	* @hint "Given a resource, I gather the meta for that resource."
 	**/
-	package struct function getResourceMeta( required struct Resource ) {
+	public struct function getResourceMeta( required struct Resource ) {
 		var meta = { 
 			"Pattern" = reReplace(arguments.Resource.Pattern, "/$", "")
 			,"Verbs" = []

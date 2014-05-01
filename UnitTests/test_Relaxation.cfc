@@ -181,7 +181,7 @@ component extends="mxunit.framework.TestCase" {
 		assertEquals(true, result.Rendered);
 		/* Test bad response */
 		result = variables.RestFramework.handleRequest( Path = "/product/this/will/never/work", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
-		debug(result);
+		//debug(result);
 		assertIsStruct(result);
 		assertEquals(false, result.Success);
 		assertEquals(true, result.Rendered);
@@ -220,6 +220,79 @@ component extends="mxunit.framework.TestCase" {
 		assertTrue(isJSON(result.Output),"Shoot result was not JSON.");
 		assertTrue(FindNoCase("Hot Sauce!",result.Output),"Part of the JSON string that should be there IS NOT.");
 	}
+	
+	/**
+	 * @hint I test translateConfig and make sure it functions as expected/desired
+	 **/
+	public void function test_translateConfig() {
+		var testJson = '{
+			"WrapSimpleValues": {
+				"enabled": true,
+				"objectProperty": "result"
+			},
+			"RequestPatterns": {
+				"/customer/{customerID}/": {
+					"GET": {
+						"Bean": "CustomerService",
+						"Method": "getCustomer"
+					},
+					"PUT": {
+						"Bean": "CustomerService",
+						"Method": "updateCustomer"
+					}
+				}
+			}
+		}';
+		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testJson); 
+		makePublic(local.relaxationInstance, "translateConfig");
+		
+		var configResult = relaxationInstance.translateConfig(testJson);
+		debug(configResult);
+	}
+	
+	/**
+	 * @hint 
+	 **/
+	public void function wrap_simple_values_enabled_should_work() {
+		var testJson = '{
+			"WrapSimpleValues": {
+				"enabled": true,
+				"objectProperty": "result"
+			},
+			"RequestPatterns": {
+				"/customer/{customerID}/": {
+					"GET": {
+						"Bean": "CustomerService",
+						"Method": "getCustomer",
+						"WrapSimpleValues": {
+							"enabled": false
+						}
+					},
+					"PUT": {
+						"Bean": "CustomerService",
+						"Method": "updateCustomer",
+						"WrapSimpleValues": {
+							"objectProperty": "id"
+						}
+					}
+				}
+			}
+		}';
+		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testJson); 
+		
+		makePublic(relaxationInstance, "translateConfig");
+		var config = relaxationInstance.translateConfig(testJson);
+		
+		debug("In wrap_simple_values_enabled_should_work... config:");
+		debug(config);
+		
+		makePublic(relaxationInstance, "configureResources");
+		relaxationInstance.configureResources(config);
+		
+		//debug(relaxationInstance.getConfig());
+	}
+	
+	
 	
 	/*
 	 * PRIVATE UTILITY METHODS

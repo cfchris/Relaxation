@@ -17,6 +17,16 @@ component
 	* @hint "I initialize the object and get the routing all setup."
 	**/
 	public component function init( required any Config, component BeanFactory, any AuthorizationMethod, any OnErrorMethod ) {
+		var defaultSimpleValueSettings = {
+			"enabled": "true",
+			"objectProperty": "result"
+		};
+		variables.Defaults = {
+			'Config': {
+				'WrapSimpleValues': defaultSimpleValueSettings
+			}
+		};
+		
 		/* Set object to handle CFML stuff. */
 		setcfmlFunctions( new cfmlFunctions() );
 		/* Set object to handle HTTP response stuff. */
@@ -212,7 +222,19 @@ component
 				rethrow;
 			}
 		}
-		result.Output = isDefined("methodResult") ? SerializeJSON(methodResult) : "";
+		
+		if ( isDefined("methodResult") ) {
+			if( isStruct(methodResult) || isObject(methodResult) || isArray(methodResult) ) {
+				var resultOutput = SerializeJSON(methodResult);
+			} else {
+				var resultOutput = SerializeJSON({result.DefaultSimpleProperty: methodResult});
+			}
+			
+			result.Output = SerializeJSON(methodResult);
+		} else {
+			result.Output = "{}";
+		}
+		
 		return result;
 	}
 	
@@ -236,6 +258,7 @@ component
 		var keyList = ListSort(StructKeyList(Patterns), 'textnocase', 'asc');
 		for ( var key in ListToArray(keyList) ) {
 			var resource = Patterns[key];
+			
 			/* Build "AllowedVerbs" for "Allow" header. */
 			resource["AllowedVerbs"] = uCase(ListAppend(StructKeyList(resource),"OPTIONS"));
 			resource["AllowedVerbs"] = ListSort(resource["AllowedVerbs"],"textnocase","ASC");
@@ -248,6 +271,23 @@ component
 			/* Make sure it matches exactly. (Start to finish) */
 			resource.Regex = '^' & resource.Regex & '$';
 			/* Add resources with arguments in the path to the bottom. */
+			
+			/* Pre-compute whether this resource should force valid JSON output */
+			// iterate over resource's keys and act on the valid HTTP request methods, aka verbs
+			var httpRequestMethods = getPossibleRequestMethods();
+			for ( var resourceKey in resource ) {
+				if ( arrayFind(httpRequestMethods, resourceKey) ) {
+					if ( !structKeyExists(arguments.Config, "WrapSimpleValues") ) {
+						arguments.Config["WrapSimpleValues"] = {};
+					}
+					if ( !structKeyExists(resource[resourceKey], "WrapSimpleValues") ) {
+						resource[resourceKey]["WrapSimpleValues"] = {};
+					}
+					structAppend(arguments.Config.WrapSimpleValues, variables.Defaults.Config.WrapSimpleValues, false);
+					structAppend(resource[resourceKey].WrapSimpleValues, Config.WrapSimpleValues, false);
+				}
+			}
+			
 			ArrayAppend(
 				variables.Config.Resources
 				,resource
@@ -382,5 +422,20 @@ component
 		}
 		return DeserializeJSON(trim(fileRead(arguments.Config)));
 	}
-
+	
+	/**
+	 * @hint I build an array of possible HTTP request methods and return it
+	 **/
+	 private array function getPossibleRequestMethods() {
+	 	return [
+	 		"OPTIONS",
+			"GET",
+			"HEAD",
+			"POST",
+			"PUT",
+			"DELETE",
+			"TRACE",
+			"CONNECT"
+	 	];
+	 }
 }
