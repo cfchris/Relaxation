@@ -1,10 +1,6 @@
 {
 	"RequestPatterns": {
-		"/login": {
-			"Bean": "AccountService"
-			,"Method": "logIn"
-		}
-		,"/product": {
+		"/product": {
 			"GET": {
 				"Bean": "ProductService"
 				,"Method": "getAllProducts"
