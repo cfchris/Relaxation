@@ -13,9 +13,9 @@ component
 	
 	variables.Config = {};
 	variables.Defaults = {
-		'WrapSimpleValues': {
-			"enabled": "true",
-			"objectProperty": "result"
+		'WrapSimpleValues' = {
+			"enabled" = "true",
+			"objectProperty" = "result"
 		}
 	};
 	
@@ -225,23 +225,17 @@ component
 				rethrow;
 			}
 		}
-		
-		if ( isDefined("methodResult") ) {
-			if( isStruct(methodResult) || isObject(methodResult) || isArray(methodResult) || !resource.WrapSimpleValues.enabled ) {
-				var resultOutput = SerializeJSON(methodResult);
+		if ( IsDefined("methodResult") ) {
+			if( IsSimpleValue(methodResult) && resource.WrapSimpleValues.enabled ) {
+				/* Wrap the simple value in an object so it's valid JSON */
+				var resultOutput = SerializeJSON({"#resource.WrapSimpleValues.objectProperty#" = methodResult});
 			} else {
-				var resultOutput = SerializeJSON({"#resource.WrapSimpleValues.objectProperty#": methodResult});
+				var resultOutput = SerializeJSON(methodResult);
 			}
-			
 			result.Output = resultOutput;
 		} else {
-			if( resource.WrapSimpleValues.enabled ) {
-				result.Output = "{}";
-			} else {
-				result.Output = "";
-			}
+			result.Output = "";
 		}
-		
 		return result;
 	}
 	
@@ -260,10 +254,10 @@ component
 		} else if ( StructKeyExists(arguments.Config,"Patterns") ) {
 			var Patterns = arguments.Config.Patterns; 
 		}
-		if ( !structKeyExists(arguments.Config, "WrapSimpleValues") ) {
+		if ( !StructKeyExists(arguments.Config, "WrapSimpleValues") ) {
 			arguments.Config["WrapSimpleValues"] = {};
 		}
-		structAppend(arguments.Config.WrapSimpleValues, variables.Defaults.WrapSimpleValues, false);
+		StructAppend(arguments.Config.WrapSimpleValues, variables.Defaults.WrapSimpleValues, false);
 		variables.Config.Resources = [];
 		/* By sorting the keys this way, static patterns should take priority over dynamic ones. */
 		var keyList = ListSort(StructKeyList(Patterns), 'textnocase', 'asc');
@@ -280,20 +274,17 @@ component
 			resource.Regex = REReplace(resource.Regex, "{[^}]*?}", "([^/]+?)", "all");
 			/* Make sure it matches exactly. (Start to finish) */
 			resource.Regex = '^' & resource.Regex & '$';
-			/* Add resources with arguments in the path to the bottom. */
-			
 			/* Pre-compute whether this resource should force valid JSON output */
-			// iterate over resource's keys and act on the valid HTTP request methods, aka verbs
 			var httpRequestMethods = variables.HTTPUtil.getPossibleRequestMethods();
 			for ( var resourceKey in resource ) {
-				if ( arrayFind(httpRequestMethods, resourceKey) ) {
-					if ( !structKeyExists(resource[resourceKey], "WrapSimpleValues") ) {
+				if ( ArrayFind(httpRequestMethods, resourceKey) ) {
+					if ( !StructKeyExists(resource[resourceKey], "WrapSimpleValues") ) {
 						resource[resourceKey]["WrapSimpleValues"] = {};
 					}
-					structAppend(resource[resourceKey].WrapSimpleValues, arguments.Config.WrapSimpleValues, false);
+					StructAppend(resource[resourceKey].WrapSimpleValues, arguments.Config.WrapSimpleValues, false);
 				}
 			}
-			
+			/* Add resources with arguments in the path to the bottom. */
 			ArrayAppend(
 				variables.Config.Resources
 				,resource

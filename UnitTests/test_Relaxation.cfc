@@ -203,7 +203,7 @@ component extends="mxunit.framework.TestCase" {
 		assertIsStruct(result);
 		assertTrue(!StructIsEmpty(result), "Shoot. The return struct is empty.");
 		assertEquals(true, result.Success);
-		assertEquals("{}", result.Output);
+		assertEquals("", result.Output);
 	}
 	
 	/**
@@ -225,7 +225,7 @@ component extends="mxunit.framework.TestCase" {
 	 * @hint I test that the WrapSimpleValues portion of the configuration works properly
 	 **/
 	public void function wrap_simple_values_config_should_work() {
-		var testConfig = {
+		var testConfig = '{
 			"WrapSimpleValues": {
 				"enabled": true,
 				"objectProperty": "requestResult"
@@ -248,22 +248,22 @@ component extends="mxunit.framework.TestCase" {
 					}
 				}
 			}
-		};
+		}';
 		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testConfig);
 		var config = relaxationInstance.getConfig();
 
-		assertEquals(config.Resources[1].GET.WrapSimpleValues.enabled, false);
-		assertEquals(config.Resources[1].GET.WrapSimpleValues.objectProperty, 'requestResult');
+		assertFalse(config.Resources[1].GET.WrapSimpleValues.enabled);
+		assertEquals('requestResult', config.Resources[1].GET.WrapSimpleValues.objectProperty);
 		
-		assertEquals(config.Resources[1].PUT.WrapSimpleValues.enabled, true);
-		assertEquals(config.Resources[1].PUT.WrapSimpleValues.objectProperty, 'id');
+		assertTrue(config.Resources[1].PUT.WrapSimpleValues.enabled);
+		assertEquals('id', config.Resources[1].PUT.WrapSimpleValues.objectProperty);
 	}
 	
 	/**
 	 * @hint I test that the WrapSimpleValues portion of the configuration works properly
 	 **/
 	public void function wrap_simple_values_default_config_should_work() {
-		var testConfig = {
+		var testConfig = '{
 			"RequestPatterns": {
 				"/customer/{ProductID}/": {
 					"GET": {
@@ -282,27 +282,27 @@ component extends="mxunit.framework.TestCase" {
 					}
 				}
 			}
-		};
+		}';
 		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testConfig);
 		var config = relaxationInstance.getConfig();
 
-		assertEquals(config.Resources[1].GET.WrapSimpleValues.enabled, false);
-		assertEquals(config.Resources[1].GET.WrapSimpleValues.objectProperty, 'result');
+		assertFalse(config.Resources[1].GET.WrapSimpleValues.enabled);
+		assertEquals(relaxationInstance.getDefaults().WrapSimpleValues.objectProperty, config.Resources[1].GET.WrapSimpleValues.objectProperty);
 		
-		assertEquals(config.Resources[1].PUT.WrapSimpleValues.enabled, true);
-		assertEquals(config.Resources[1].PUT.WrapSimpleValues.objectProperty, 'id');
+		assertTrue(config.Resources[1].PUT.WrapSimpleValues.enabled);
+		assertEquals('id', config.Resources[1].PUT.WrapSimpleValues.objectProperty);
 	}
 	
 	/**
 	 * @hint I test that top-level WrapSimpleValues settings properly cascace into verb-level ones
 	 **/
-	public void function wrap_simple_values_top_setting_should_cascade_properly() {
+	public void function wrap_simple_values_top_settings_should_affect_behavior() {
 		var defaultObjectProperty = "requestResult";
 		
-		var testConfig = {
+		var testConfig = '{
 			"WrapSimpleValues": {
 				"enabled": true,
-				"objectProperty": defaultObjectProperty
+				"objectProperty": "#defaultObjectProperty#"
 			},
 			"RequestPatterns": {
 				"/product/{ProductID}/": {
@@ -340,7 +340,7 @@ component extends="mxunit.framework.TestCase" {
 					}
 				}
 			}
-		};
+		}';
 		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testConfig, getBeanFactory());
 		
 		// test simple value wrapping behavior
@@ -355,8 +355,8 @@ component extends="mxunit.framework.TestCase" {
 	/**
 	 * @hint I test that top-level WrapSimpleValues settings properly cascace into verb-level ones
 	 **/
-	public void function wrap_simple_values_default_behavior_should_cascade_properly() {
-		var testConfig = {
+	public void function wrap_simple_values_default_settings_should_affect_behavior() {
+		var testConfig = '{
 			"RequestPatterns": {
 				"/product/{ProductID}/": {
 					"GET": {
@@ -393,7 +393,7 @@ component extends="mxunit.framework.TestCase" {
 					}
 				}
 			}
-		};
+		}';
 		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testConfig, getBeanFactory());
 		var defaultObjectProperty = relaxationInstance.getDefaults().WrapSimpleValues.objectProperty;
 		
