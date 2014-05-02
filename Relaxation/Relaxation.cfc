@@ -13,7 +13,7 @@ component
 	
 	variables.Config = {};
 	variables.Defaults = {
-		'WrapSimpleValues' = {
+		"WrapSimpleValues" = {
 			"enabled" = "true",
 			"objectProperty" = "result"
 		}
@@ -101,34 +101,34 @@ component
 			switch(result.Error) {
 				case "NotAuthorized": {
 					var response = {
-						'status' = 403,
-						'statusText' = 'Forbidden',
-						'responseText' = 'The user does not have access to this resource'
+						"status" = 403,
+						"statusText" = 'Forbidden',
+						"responseText" = 'The user does not have access to this resource'
 					};
 					break;
 				}
 				case "ResourceNotFound": {
 					var response = {
-						'status' = 404,
-						'statusText' = 'Not Found',
-						'responseText' = result.ErrorMessage
+						"status" = 404,
+						"statusText" = 'Not Found',
+						"responseText" = result.ErrorMessage
 					};
 					break;
 				}
 				case "VerbNotFound": {
 					variables.HTTPUtil.setResponseHeader('Allow', result.AllowedVerbs);
 					var response = {
-						'status' = 405,
-						'statusText' = 'Method Not Allowed',
-						'responseText' = result.ErrorMessage
+						"status" = 405,
+						"statusText" = 'Method Not Allowed',
+						"responseText" = result.ErrorMessage
 					};
 					break;
 				}
 				default: {
 					var response = {
-						'status' = 500,
-						'statusText' = 'Unknown Error Type',
-						'responseText' = result.ErrorMessage
+						"status" = 500,
+						"statusText" = 'Unknown Error Type',
+						"responseText" = result.ErrorMessage
 					};
 					break;
 				}
@@ -228,11 +228,10 @@ component
 		if ( IsDefined("methodResult") ) {
 			if( IsSimpleValue(methodResult) && resource.WrapSimpleValues.enabled ) {
 				/* Wrap the simple value in an object so it's valid JSON */
-				var resultOutput = SerializeJSON({"#resource.WrapSimpleValues.objectProperty#" = methodResult});
+				result.Output = SerializeJSON({"#resource.WrapSimpleValues.objectProperty#" = methodResult});
 			} else {
-				var resultOutput = SerializeJSON(methodResult);
+				result.Output = SerializeJSON(methodResult);
 			}
-			result.Output = resultOutput;
 		} else {
 			result.Output = "";
 		}
@@ -277,7 +276,7 @@ component
 			/* Pre-compute whether this resource should force valid JSON output */
 			var httpRequestMethods = variables.HTTPUtil.getPossibleRequestMethods();
 			for ( var resourceKey in resource ) {
-				if ( ArrayFind(httpRequestMethods, resourceKey) ) {
+				if ( ArrayFindNoCase(httpRequestMethods, resourceKey) ) {
 					if ( !StructKeyExists(resource[resourceKey], "WrapSimpleValues") ) {
 						resource[resourceKey]["WrapSimpleValues"] = {};
 					}
@@ -285,10 +284,7 @@ component
 				}
 			}
 			/* Add resources with arguments in the path to the bottom. */
-			ArrayAppend(
-				variables.Config.Resources
-				,resource
-			);
+			ArrayAppend( variables.Config.Resources, resource );
 		}
 	}
 	

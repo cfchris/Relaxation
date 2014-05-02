@@ -23,13 +23,11 @@ component displayname="Testing Service" hint="I am a simple service to test requ
 	* @hint "I get a product by its ID"
 	**/
 	public struct function getProductByID( string ProductID ) {
-		
 		for (var p in variables.Products) {
 			if (p.ProductID == arguments.ProductID) {
 				return p;
 			}	
 		}
-		
 		return {};
 	}
 	
@@ -39,7 +37,6 @@ component displayname="Testing Service" hint="I am a simple service to test requ
 				return product.Price;
 			}	
 		}
-		
 		return "";
 	}
 	
