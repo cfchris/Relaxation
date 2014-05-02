@@ -64,4 +64,19 @@ component
 		getpagecontext().getResponse().setStatus(JavaCast("int",arguments.Status), JavaCast("string",arguments.StatusText));
 	}
 	
+	/**
+	 * @hint I build an array of possible HTTP request methods and return it
+	 **/
+	 public array function getPossibleRequestMethods() {
+	 	return [
+	 		"OPTIONS",
+			"GET",
+			"HEAD",
+			"POST",
+			"PUT",
+			"DELETE",
+			"TRACE",
+			"CONNECT"
+		];
+	}
 }

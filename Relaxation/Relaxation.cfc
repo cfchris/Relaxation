@@ -260,6 +260,10 @@ component
 		} else if ( StructKeyExists(arguments.Config,"Patterns") ) {
 			var Patterns = arguments.Config.Patterns; 
 		}
+		if ( !structKeyExists(arguments.Config, "WrapSimpleValues") ) {
+			arguments.Config["WrapSimpleValues"] = {};
+		}
+		structAppend(arguments.Config.WrapSimpleValues, variables.Defaults.WrapSimpleValues, false);
 		variables.Config.Resources = [];
 		/* By sorting the keys this way, static patterns should take priority over dynamic ones. */
 		var keyList = ListSort(StructKeyList(Patterns), 'textnocase', 'asc');
@@ -280,16 +284,12 @@ component
 			
 			/* Pre-compute whether this resource should force valid JSON output */
 			// iterate over resource's keys and act on the valid HTTP request methods, aka verbs
-			var httpRequestMethods = getPossibleRequestMethods();
+			var httpRequestMethods = variables.HTTPUtil.getPossibleRequestMethods();
 			for ( var resourceKey in resource ) {
 				if ( arrayFind(httpRequestMethods, resourceKey) ) {
-					if ( !structKeyExists(arguments.Config, "WrapSimpleValues") ) {
-						arguments.Config["WrapSimpleValues"] = {};
-					}
 					if ( !structKeyExists(resource[resourceKey], "WrapSimpleValues") ) {
 						resource[resourceKey]["WrapSimpleValues"] = {};
 					}
-					structAppend(arguments.Config.WrapSimpleValues, variables.Defaults.WrapSimpleValues, false);
 					structAppend(resource[resourceKey].WrapSimpleValues, arguments.Config.WrapSimpleValues, false);
 				}
 			}
@@ -427,21 +427,5 @@ component
 			throw( type="Relaxation.Config.InvalidPath", message="I could not find a file at the path you supplied. [#arguments.Config#]");
 		}
 		return DeserializeJSON(trim(fileRead(arguments.Config)));
-	}
-	
-	/**
-	 * @hint I build an array of possible HTTP request methods and return it
-	 **/
-	 private array function getPossibleRequestMethods() {
-	 	return [
-	 		"OPTIONS",
-			"GET",
-			"HEAD",
-			"POST",
-			"PUT",
-			"DELETE",
-			"TRACE",
-			"CONNECT"
-		];
 	}
 }
