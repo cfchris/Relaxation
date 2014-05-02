@@ -33,6 +33,16 @@ component displayname="Testing Service" hint="I am a simple service to test requ
 		return {};
 	}
 	
+	public string function getProductPrice( string ProductID ) {
+		for (var product in variables.Products) {
+			if (product.ProductID == arguments.ProductID) {
+				return product.Price;
+			}	
+		}
+		
+		return "";
+	}
+	
 	/* METHODS THAT THE UNIT TESTING NEEDS */
 	
 	/**
@@ -48,7 +58,7 @@ component displayname="Testing Service" hint="I am a simple service to test requ
 	/**
 	* @hint "I will save a product."
 	**/
-	public array function saveProduct( required struct Product ) {}
+	public struct function saveProduct( required struct Product ) {}
 	
 	/**
 	* @hint "???"

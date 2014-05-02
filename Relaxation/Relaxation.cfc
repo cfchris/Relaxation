@@ -12,6 +12,12 @@ component
 	property name="OnErrorMethod" type="any";
 	
 	variables.Config = {};
+	variables.Defaults = {
+		'WrapSimpleValues' = {
+			"enabled" = "true",
+			"objectProperty" = "result"
+		}
+	};
 	
 	/**
 	* @hint "I initialize the object and get the routing all setup."
@@ -49,6 +55,13 @@ component
 	**/
 	public struct function getConfig() {
 		return variables.Config;
+	}
+	
+	/**
+	* @hint "I return the defaults structure."
+	**/
+	public struct function getDefaults() {
+		return variables.Defaults;
 	}
 	
 	/**
@@ -212,7 +225,17 @@ component
 				rethrow;
 			}
 		}
-		result.Output = isDefined("methodResult") ? SerializeJSON(methodResult) : "";
+		if ( IsDefined("methodResult") ) {
+			if( IsSimpleValue(methodResult) && resource.WrapSimpleValues.enabled ) {
+				/* Wrap the simple value in an object so it's valid JSON */
+				var resultOutput = SerializeJSON({"#resource.WrapSimpleValues.objectProperty#" = methodResult});
+			} else {
+				var resultOutput = SerializeJSON(methodResult);
+			}
+			result.Output = resultOutput;
+		} else {
+			result.Output = "";
+		}
 		return result;
 	}
 	
@@ -231,6 +254,10 @@ component
 		} else if ( StructKeyExists(arguments.Config,"Patterns") ) {
 			var Patterns = arguments.Config.Patterns; 
 		}
+		if ( !StructKeyExists(arguments.Config, "WrapSimpleValues") ) {
+			arguments.Config["WrapSimpleValues"] = {};
+		}
+		StructAppend(arguments.Config.WrapSimpleValues, variables.Defaults.WrapSimpleValues, false);
 		variables.Config.Resources = [];
 		/* By sorting the keys this way, static patterns should take priority over dynamic ones. */
 		var keyList = ListSort(StructKeyList(Patterns), 'textnocase', 'asc');
@@ -247,6 +274,16 @@ component
 			resource.Regex = REReplace(resource.Regex, "{[^}]*?}", "([^/]+?)", "all");
 			/* Make sure it matches exactly. (Start to finish) */
 			resource.Regex = '^' & resource.Regex & '$';
+			/* Pre-compute whether this resource should force valid JSON output */
+			var httpRequestMethods = variables.HTTPUtil.getPossibleRequestMethods();
+			for ( var resourceKey in resource ) {
+				if ( ArrayFind(httpRequestMethods, resourceKey) ) {
+					if ( !StructKeyExists(resource[resourceKey], "WrapSimpleValues") ) {
+						resource[resourceKey]["WrapSimpleValues"] = {};
+					}
+					StructAppend(resource[resourceKey].WrapSimpleValues, arguments.Config.WrapSimpleValues, false);
+				}
+			}
 			/* Add resources with arguments in the path to the bottom. */
 			ArrayAppend(
 				variables.Config.Resources
@@ -382,5 +419,4 @@ component
 		}
 		return DeserializeJSON(trim(fileRead(arguments.Config)));
 	}
-
 }
