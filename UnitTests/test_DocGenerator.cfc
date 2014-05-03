@@ -24,7 +24,6 @@ component extends="mxunit.framework.TestCase" {
 	**/
 	public void function test_getFullMeta() {
 		var DocGen = variables.Framework.getDocGenerator();
-		makePublic(DocGen, "getFullMeta");
 		var docMeta = DocGen.getFullMeta();
 		//debug(docMeta);
 		assertIsArray(docMeta);
@@ -39,7 +38,6 @@ component extends="mxunit.framework.TestCase" {
 	**/
 	public void function test_getFunctionMeta() {
 		var DocGen = variables.Framework.getDocGenerator();
-		makePublic(DocGen, "getFunctionMeta");
 		/* Test with function with very little specified. */
 		var meta = DocGen.getFunctionMeta(minimalMetaForTest);
 		assertIsStruct(meta);
@@ -75,7 +73,6 @@ component extends="mxunit.framework.TestCase" {
 		var DocGen = variables.Framework.getDocGenerator();
 		var Config = variables.Framework.getConfig();
 		//debug(config);
-		makePublic(DocGen, "getResourceMeta");
 		/* Test on first resource. (Should be '/product') */
 		var meta = DocGen.getResourceMeta(Config.Resources[1]);
 		//debug(meta);
@@ -95,7 +92,6 @@ component extends="mxunit.framework.TestCase" {
 	
 	/**
 	* @hint "I return a mock BeanFactory for testing."
-	* @output false
 	**/
 	private any function getBeanFactory() {
 		var bf = Mock();

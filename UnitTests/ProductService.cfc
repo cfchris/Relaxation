@@ -2,7 +2,6 @@ component displayname="Testing Service" hint="I am a simple service to test requ
 	
 	/**
 	* @hint "I am the constructor."
-	* @output false
 	**/
 	public component function init() {
 		variables.Products = [
@@ -15,7 +14,6 @@ component displayname="Testing Service" hint="I am a simple service to test requ
 	
 	/**
 	* @hint "I return the test products"
-	* @output false
 	**/
 	public array function getAllProducts() {
 		return variables.Products;
@@ -23,17 +21,23 @@ component displayname="Testing Service" hint="I am a simple service to test requ
 	
 	/**
 	* @hint "I get a product by its ID"
-	* @output false
 	**/
 	public struct function getProductByID( string ProductID ) {
-		
 		for (var p in variables.Products) {
 			if (p.ProductID == arguments.ProductID) {
 				return p;
 			}	
 		}
-		
 		return {};
+	}
+	
+	public string function getProductPrice( string ProductID ) {
+		for (var product in variables.Products) {
+			if (product.ProductID == arguments.ProductID) {
+				return product.Price;
+			}	
+		}
+		return "";
 	}
 	
 	/* METHODS THAT THE UNIT TESTING NEEDS */
@@ -51,7 +55,7 @@ component displayname="Testing Service" hint="I am a simple service to test requ
 	/**
 	* @hint "I will save a product."
 	**/
-	public array function saveProduct( required struct Product ) {}
+	public struct function saveProduct( required struct Product ) {}
 	
 	/**
 	* @hint "???"
@@ -60,7 +64,6 @@ component displayname="Testing Service" hint="I am a simple service to test requ
 	
 	/**
 	* @hint "I return void."
-	* @output false
 	**/
 	public void function returnNothing() {
 		return;

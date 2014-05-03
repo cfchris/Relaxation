@@ -8,8 +8,8 @@ component output="false" {
 	**/
 	public boolean function onApplicationStart() {
 		try {
-			application.BeanFactory = new TestFactory();
-			var Relaxation = new Relaxation.Relaxation.Relaxation( "./RestConfig.json.cfm" );
+			application.BeanFactory = new Relaxation.Examples.Basic.TestFactory();
+			var Relaxation = new Relaxation.Relaxation.Relaxation( "/Relaxation/Examples/Basic/RestConfig.json.cfm" );
 			Relaxation.setBeanFactory( application.BeanFactory );
 			Relaxation.setOnErrorMethod( handleError );
 			Relaxation.setAuthorizationMethod( handleAuth );
@@ -34,7 +34,12 @@ component output="false" {
 	* @hint "I handle requests. (Route requests using Relaxation.)"
 	**/
 	public void function onRequest() {
-		application.REST.handleRequest();
+		var auth = application.REST.getHTTPUtil().getBasicAuthCredentials();
+		if ( IsNull(auth) || !(auth.user == "Maxin" && auth.password == "Relaxin") ) {
+			application.REST.getHTTPUtil().promptForBasicAuth( "API Demo" );
+		} else {
+			application.REST.handleRequest();
+		}
 	}
 	
 	/**
