@@ -14,7 +14,7 @@ component
 	variables.Config = {};
 	variables.Defaults = {
 		"WrapSimpleValues" = {
-			"enabled" = "true",
+			"enabled" = true,
 			"objectProperty" = "result"
 		}
 	};
