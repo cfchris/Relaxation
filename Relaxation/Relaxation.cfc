@@ -13,9 +13,18 @@ component
 	
 	variables.Config = {};
 	variables.Defaults = {
-		"WrapSimpleValues" = {
-			"enabled" = true,
-			"objectProperty" = "result"
+		"Arguments": {
+			"PayloadArgument": "Payload"
+			,"MergeScopes": {
+				"Path": true
+				,"Payload": true
+				,"URL": true
+				,"Form": true
+			}
+		}
+		,"WrapSimpleValues" = {
+			"enabled" = true
+			,"objectProperty" = "result"
 		}
 	};
 	
@@ -256,7 +265,12 @@ component
 		if ( !StructKeyExists(arguments.Config, "WrapSimpleValues") ) {
 			arguments.Config["WrapSimpleValues"] = {};
 		}
+		if ( !StructKeyExists(arguments.Config, "Arguments") ) {
+			arguments.Config["Arguments"] = {};
+		}
 		StructAppend(arguments.Config.WrapSimpleValues, variables.Defaults.WrapSimpleValues, false);
+		StructAppend(arguments.Config.Arguments, variables.Defaults.Arguments, false);
+		StructAppend(arguments.Config.Arguments.MergeScopes, variables.Defaults.Arguments.MergeScopes, false);
 		variables.Config.Resources = [];
 		/* By sorting the keys this way, static patterns should take priority over dynamic ones. */
 		var keyList = ListSort(StructKeyList(Patterns), 'textnocase', 'asc');
@@ -280,7 +294,12 @@ component
 					if ( !StructKeyExists(resource[resourceKey], "WrapSimpleValues") ) {
 						resource[resourceKey]["WrapSimpleValues"] = {};
 					}
+					if ( !StructKeyExists(resource[resourceKey], "Arguments") ) {
+						resource[resourceKey]["Arguments"] = {};
+					}
 					StructAppend(resource[resourceKey].WrapSimpleValues, arguments.Config.WrapSimpleValues, false);
+					StructAppend(resource[resourceKey].Arguments, arguments.Config.Arguments, false);
+					StructAppend(resource[resourceKey].Arguments.MergeScopes, arguments.Config.Arguments.MergeScopes, false);
 				}
 			}
 			/* Add resources with arguments in the path to the bottom. */
@@ -356,7 +375,6 @@ component
 			Payload = DeserializeJSON(trim(arguments.RequestBody));
 		}
 		var args = {
-			"Payload" = Payload,
 			"ArgumentSources" = {
 				"DefaultArguments" = DefaultArgs,
 				"FormScope" = arguments.FormScope,
@@ -365,13 +383,21 @@ component
 				"URLScope" = arguments.URLScope
 			}
 		};
-		/* Coalesce all the sources together. User "overwrite" false and put the highest priority first.  */
-		StructAppend(args, PathValues, false);	/* Path 1st */
-		if ( isStruct(Payload) ) {
+		/* Insert payload with specified (or default) argument name. */
+		args[arguments.ResourceMatch.Arguments.PayloadArgument] = Payload;
+		/* Coalesce all the sources together. Use "overwrite" false and put the highest priority first.  */
+		if ( arguments.ResourceMatch.Arguments.MergeScopes.Path ) {
+			StructAppend(args, PathValues, false);	/* Path 1st */
+		}
+		if ( isStruct(Payload) && arguments.ResourceMatch.Arguments.MergeScopes.Payload ) {
 			StructAppend(args, Payload, false);	/* Body 2nd */
 		}
-		StructAppend(args, URLScope, false);	/* URL 3rd */
-		StructAppend(args, FormScope, false);	/* Form 4th */
+		if ( arguments.ResourceMatch.Arguments.MergeScopes.URL ) {
+			StructAppend(args, URLScope, false);	/* URL 3rd */
+		}
+		if ( arguments.ResourceMatch.Arguments.MergeScopes.Form ) {
+			StructAppend(args, FormScope, false);	/* Form 4th */
+		}
 		StructAppend(args, DefaultArgs, false);	/* DefaultArguments 5th */
 		return args;
 	}
