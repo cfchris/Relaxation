@@ -300,6 +300,10 @@ component
 					StructAppend(resource[resourceKey].WrapSimpleValues, arguments.Config.WrapSimpleValues, false);
 					StructAppend(resource[resourceKey].Arguments, arguments.Config.Arguments, false);
 					StructAppend(resource[resourceKey].Arguments.MergeScopes, arguments.Config.Arguments.MergeScopes, false);
+					if ( StructKeyExists(resource[resourceKey], "DefaultArguments") && IsStruct(resource[resourceKey].DefaultArguments) ) {
+						/* Remap legacy config to new position. */
+						resource[resourceKey].Arguments["Defaults"] = resource[resourceKey].DefaultArguments;
+					}
 				}
 			}
 			/* Add resources with arguments in the path to the bottom. */
@@ -355,7 +359,7 @@ component
 	**/
 	private struct function gatherRequestArguments( required struct ResourceMatch, string RequestBody = "", struct URLScope = {}, struct FormScope = {} ) {
 		/* Grab the DefaultArguments if they exist. */
-		var DefaultArgs = isNull(arguments.ResourceMatch.DefaultArguments) ? {} : arguments.ResourceMatch.DefaultArguments;
+		var DefaultArgs = isNull(arguments.ResourceMatch.Arguments.Defaults) ? {} : arguments.ResourceMatch.Arguments.Defaults;
 		/* Get the arguments from the URIs (e.g. /product/321 to ProductID=321) */
 		var PathValues = {};
 		if ( ReFindNoCase("[{}]", ResourceMatch.Pattern) ) {

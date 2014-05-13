@@ -160,12 +160,18 @@ component extends="mxunit.framework.TestCase" {
 		assertEquals("red", args.Color);
 		assertEquals(FormScope.FormTestArg, args.FormTestArg);
 		
-		/* Run a request that has "DefaultArguments" configured. */
+		/* LEGACY: Run a request that has "DefaultArguments" configured. */
 		var Match = variables.RestFramework.findResourceConfig("/product/all-active","GET");
 		var args = variables.RestFramework.gatherRequestArguments(ResourceMatch = Match, RequestBody = "", URLScope = {}, FormScope = {} );
 		//debug(args);
 		assertEquals(1, args.Active);
 		assertEquals('Available', args.Status);
+		
+		/* Run a request that has "Arguments.Defaults" configured. */
+		var Match = variables.RestFramework.findResourceConfig("/product/inactive","GET");
+		var args = variables.RestFramework.gatherRequestArguments(ResourceMatch = Match, RequestBody = "", URLScope = {}, FormScope = {} );
+		//debug(args);
+		assertEquals(0, args.Active);
 	}
 	
 	/**
