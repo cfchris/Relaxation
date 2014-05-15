@@ -42,6 +42,34 @@ component extends="mxunit.framework.TestCase" {
 	}
 	
 	/**
+	* @hint "I test the BasicAuthCheckMethod."
+	**/
+	public void function basic_auth_hook_should_work() {
+		/* Mock httpUtil methods needed for this scenario. */
+		var httpUtil = mock();
+		httpUtil.promptForBasicAuth("{string}").returns();
+		httpUtil.getBasicAuthCredentials().returns();
+		variables.RestFramework.setHTTPUtil( httpUtil );
+		
+		/* Test first with NO auth method. */
+		var result = variables.RestFramework.processRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
+		
+		/* Test with an auth method that WILL authenticate. */
+		variables.RestFramework.setBasicAuthCheckMethod( returnTrue );
+		var result = variables.RestFramework.processRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
+		
+		/* Test with an auth method that WON'T authenticate. */
+		variables.RestFramework.setBasicAuthCheckMethod( returnFalse );
+		var result = variables.RestFramework.processRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
+		
+		/* Test that having method set triggers call to httputil.getBasicAuthCredentials(). */
+		httpUtil.verifyTimes(2).getBasicAuthCredentials();
+		
+		/* Test that processing two requests only calls promptForBasicAuth once (for the time where the mock returned false). */
+		httpUtil.verifyTimes(1).promptForBasicAuth("{string}");
+	}
+	
+	/**
 	* @hint "I test all of the different styles of Config args."
 	**/
 	public void function different_config_types_should_work() {
