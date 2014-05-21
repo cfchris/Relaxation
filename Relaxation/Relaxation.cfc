@@ -5,6 +5,7 @@ component
 {
 
 	property name="AuthorizationMethod" type="any";
+	property name="BasicAuthCheckMethod" type="any";
 	property name="BeanFactory" type="component";
 	property name="cfmlFunctions" type="component";
 	property name="DocGenerator" type="component";
@@ -31,7 +32,7 @@ component
 	/**
 	* @hint "I initialize the object and get the routing all setup."
 	**/
-	public component function init( required any Config, component BeanFactory, any AuthorizationMethod, any OnErrorMethod ) {
+	public component function init( required any Config, component BeanFactory, any AuthorizationMethod, any BasicAuthCheckMethod, any OnErrorMethod ) {
 		/* Set object to handle CFML stuff. */
 		setcfmlFunctions( new cfmlFunctions() );
 		/* Set object to handle HTTP response stuff. */
@@ -46,6 +47,9 @@ component
 		if ( structKeyExists(arguments,'AuthorizationMethod') ) {
 			setAuthorizationMethod( arguments.AuthorizationMethod );
 		}
+		if ( structKeyExists(arguments,'BasicAuthCheckMethod') ) {
+			setBasicAuthCheckMethod( arguments.BasicAuthCheckMethod );
+		}
 		if ( structKeyExists(arguments,'OnErrorMethod') ) {
 			setOnErrorMethod( arguments.OnErrorMethod );
 		}
@@ -57,6 +61,23 @@ component
 		configureResources( arguments.Config );
 		/* Always return the object. */
 		return this;
+	}
+	
+	/**
+	* @hint "I apply the BasicAuthCheckMethod if it exists."
+	**/
+	private boolean function basicAuthCredentialsPass( required struct ResourceInfo ) {
+		var credentials = variables.HTTPUtil.getBasicAuthCredentials();
+		var checkCredentials = getBasicAuthCheckMethod();
+		if ( IsNull(credentials) ) {
+			/* No credentials supplied. */
+			var credentials = {
+				"specified" = false
+				,"user" = ""
+				,"password" = ""
+			};
+		}
+		return checkCredentials( credentials, ResourceInfo );
 	}
 	
 	/**
@@ -197,15 +218,20 @@ component
 			/* They just wanted to know which verbs are supported. We're done. */
 			return result;	
 		}
-		if ( !isNull(getAuthorizationMethod()) ) {
+		var authArg = {
+			"Bean" = resource.Bean,
+			"Method" = resource.Method,
+			"Path" = resource.Path,
+			"Pattern" = resource.Pattern,
+			"Verb" = resource.Verb
+		};
+		if ( !IsNull(getBasicAuthCheckMethod()) ) {
+			if ( !basicAuthCredentialsPass( authArg ) ) {
+				variables.HTTPUtil.promptForBasicAuth( "REST API" );
+			}
+		}
+		if ( !IsNull(getAuthorizationMethod()) ) {
 			var authorize = getAuthorizationMethod();
-			var authArg = {
-				"Bean" = resource.Bean,
-				"Method" = resource.Method,
-				"Path" = resource.Path,
-				"Pattern" = resource.Pattern,
-				"Verb" = resource.Verb
-			};
 			if ( !authorize(authArg) ) {
 				result.Success = false;
 				result.Error = "NotAuthorized";
