@@ -501,6 +501,32 @@ component extends="mxunit.framework.TestCase" {
 	}
 	
 	/**
+	* @hint "I test that throwing specific errorcodes are mapped to specific http status codes."
+	**/
+	public void function thrown_errors_should_map_correctly() {
+		var httpUtil = mock();
+		httpUtil.setResponseHeader('{string}', '{string}').returns();
+		httpUtil.setResponseContentType('{string}').returns();
+		httpUtil.setResponseStatus(403, 'Forbidden').returns();
+		httpUtil.setResponseStatus(404, 'Not Found').returns();
+		variables.RestFramework.setHTTPUtil( httpUtil );
+		
+		/* Mock a known request state to test status code mapping. */
+		InjectMethod( variables.RestFramework, this, 'return403Result', 'processRequest' );
+		/* Call handleRequest. */
+		var result = variables.RestFramework.handleRequest( '/na' );
+		httpUtil.verify().setResponseStatus(403, 'Forbidden');
+		AssertEquals(return403Result().ErrorMessage, result.response.responseText);
+		
+		/* Mock a known request state to test status code mapping. */
+		InjectMethod( variables.RestFramework, this, 'return404Result', 'processRequest' );
+		/* Call handleRequest. */
+		var result2 = variables.RestFramework.handleRequest( '/na' );
+		httpUtil.verify().setResponseStatus(404, 'Not Found');
+		AssertEquals(return404Result().ErrorMessage, result2.response.responseText);
+	}
+	
+	/**
 	 * @hint I test that the WrapSimpleValues portion of the configuration works properly
 	 **/
 	public void function wrap_simple_values_config_should_work() {
@@ -706,6 +732,36 @@ component extends="mxunit.framework.TestCase" {
 	**/
 	private struct function getFrameworkConfig() {
 		return DeserializeJSON(fileRead(expandPath(variables.ConfigPath)));
+	}
+	
+	/**
+	* @hint "I return a result that should trigger a 403."
+	**/
+	private struct function return403Result() {
+		var result = {
+			"Success" = false
+			,"Output" = ""
+			,"Error" = "NotAuthorized"
+			,"ErrorMessage" = "You can't touch this!"
+			,"AllowedVerbs" = ""
+			,"CacheHeaderSeconds" = ""
+		};
+		return result;
+	}
+	
+	/**
+	* @hint "I return a result that should trigger a 404."
+	**/
+	private struct function return404Result() {
+		var result = {
+			"Success" = false
+			,"Output" = ""
+			,"Error" = "ResourceNotFound"
+			,"ErrorMessage" = "Where's the beef!"
+			,"AllowedVerbs" = ""
+			,"CacheHeaderSeconds" = ""
+		};
+		return result;
 	}
 	
 	/**

@@ -130,15 +130,15 @@ component
 			/* Provide appropriate error responses. */
 			switch(result.Error) {
 				case "NotAuthorized": {
-					var response = {
+					result["Response"] = {
 						"status" = 403,
 						"statusText" = 'Forbidden',
-						"responseText" = 'The user does not have access to this resource'
+						"responseText" = result.ErrorMessage
 					};
 					break;
 				}
 				case "ResourceNotFound": {
-					var response = {
+					result["Response"] = {
 						"status" = 404,
 						"statusText" = 'Not Found',
 						"responseText" = result.ErrorMessage
@@ -147,7 +147,7 @@ component
 				}
 				case "VerbNotFound": {
 					variables.HTTPUtil.setResponseHeader('Allow', result.AllowedVerbs);
-					var response = {
+					result["Response"] = {
 						"status" = 405,
 						"statusText" = 'Method Not Allowed',
 						"responseText" = result.ErrorMessage
@@ -155,7 +155,7 @@ component
 					break;
 				}
 				default: {
-					var response = {
+					result["Response"] = {
 						"status" = 500,
 						"statusText" = 'Unknown Error Type',
 						"responseText" = result.ErrorMessage
@@ -166,8 +166,8 @@ component
 			/* Tell the client we are sending JSON. */
 			variables.HTTPUtil.setResponseContentType('application/json');
 			/* Output the response */
-			variables.HTTPUtil.setResponseStatus(response.status, response.statusText);
-			writeOutput( SerializeJSON(response) );
+			variables.HTTPUtil.setResponseStatus(result.Response.status, result.Response.statusText);
+			writeOutput( SerializeJSON(result.Response) );
 		}
 		result["Rendered"] = true;
 		return result;
@@ -235,6 +235,7 @@ component
 			if ( !authorize(authArg) ) {
 				result.Success = false;
 				result.Error = "NotAuthorized";
+				result.ErrorMessage = "The user does not have access to this resource";
 				return result;
 			}
 		}
