@@ -21,6 +21,181 @@ component extends="mxunit.framework.TestCase" {
 	 **/
 	
 	/**
+	* @hint "I test that argument config defaults work."
+	**/
+	public void function argument_config_defaults_should_work() {
+		var testConfig = '{
+			"RequestPatterns": {
+				"/product/{ProductID}/": {
+					"PUT": {
+						"Bean": "ProductService"
+						,"Method": "updateProduct"
+					}
+				}
+			}
+		}';
+		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testConfig);
+		var config = relaxationInstance.getConfig();
+		
+		AssertIsStruct(config.Resources[1].PUT.Arguments);
+		AssertEquals('Payload', config.Resources[1].PUT.Arguments.PayloadArgument);
+		AssertTrue(config.Resources[1].PUT.Arguments.MergeScopes.Path);
+		AssertTrue(config.Resources[1].PUT.Arguments.MergeScopes.Payload);
+		AssertTrue(config.Resources[1].PUT.Arguments.MergeScopes.URL);
+		AssertTrue(config.Resources[1].PUT.Arguments.MergeScopes.Form);
+	}
+	
+	/**
+	* @hint "I test that argument config defaults work."
+	**/
+	public void function argument_config_top_level_should_work() {
+		var testConfig = '{
+			"Arguments": {
+				"PayloadArgument": "TestPayloadArg"
+				,"MergeScopes": {
+					"Path": false
+					,"Payload": false
+					,"URL": false
+					,"Form": false
+				}
+			}
+			,"RequestPatterns": {
+				"/product/{ProductID}/": {
+					"PUT": {
+						"Bean": "ProductService"
+						,"Method": "updateProduct"
+					}
+				}
+			}
+		}';
+		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testConfig);
+		var config = relaxationInstance.getConfig();
+		
+		AssertIsStruct(config.Resources[1].PUT.Arguments);
+		AssertEquals('TestPayloadArg', config.Resources[1].PUT.Arguments.PayloadArgument);
+		AssertFalse(config.Resources[1].PUT.Arguments.MergeScopes.Path);
+		AssertFalse(config.Resources[1].PUT.Arguments.MergeScopes.Payload);
+		AssertFalse(config.Resources[1].PUT.Arguments.MergeScopes.URL);
+		AssertFalse(config.Resources[1].PUT.Arguments.MergeScopes.Form);
+	}
+	
+	/**
+	* @hint "I test that argument config defaults work."
+	**/
+	public void function argument_config_verb_level_should_work() {
+		var testConfig = '{
+			"Arguments": {
+				"PayloadArgument": "TestPayloadArg"
+				,"MergeScopes": {
+					"Path": true
+					,"Payload": true
+					,"URL": true
+				}
+			}
+			,"RequestPatterns": {
+				"/product/{ProductID}/": {
+					"PUT": {
+						"Bean": "ProductService"
+						,"Method": "updateProduct"
+						,"Arguments": {
+							"PayloadArgument": "Product"
+							,"MergeScopes": {
+								"Payload": false
+							}
+						}
+					}
+				}
+			}
+		}';
+		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testConfig);
+		var config = relaxationInstance.getConfig();
+		
+		AssertIsStruct(config.Resources[1].PUT.Arguments);
+		AssertEquals('Product', config.Resources[1].PUT.Arguments.PayloadArgument);
+		AssertTrue(config.Resources[1].PUT.Arguments.MergeScopes.Path);
+		AssertFalse(config.Resources[1].PUT.Arguments.MergeScopes.Payload);
+		AssertTrue(config.Resources[1].PUT.Arguments.MergeScopes.URL);
+		AssertTrue(config.Resources[1].PUT.Arguments.MergeScopes.Form);
+	}
+	
+	/**
+	* @hint "I test that the payload argument is used to build arguments."
+	**/
+	public void function argument_merge_config_works_when_building_arguments() {
+		var testConfig = '{
+			"RequestPatterns": {
+				"/widget/{WidgetID}/something": {
+					"POST": {
+						"Bean": "WidgetService"
+						,"Method": "addSomething"
+						,"Arguments": {
+							"MergeScopes": {
+								"Path": true
+								,"Payload": true
+								,"URL": true
+								,"Form": true
+							}
+						}
+					}
+				}
+				,"/product": {
+					"POST": {
+						"Bean": "ProductService"
+						,"Method": "addProduct"
+						,"Arguments": {
+							"MergeScopes": {
+								"Path": false
+								,"Payload": false
+								,"URL": false
+								,"Form": false
+							}
+						}
+					}
+				}
+				,"/product/{ProductID}/": {
+					"GET": {
+						"Bean": "ProductService"
+						,"Method": "getProductByID"
+					}
+					,"PUT": {
+						"Bean": "ProductService"
+						,"Method": "updateProduct"
+						,"Arguments": {
+							"MergeScopes": {
+								"Payload": false
+							}
+						}
+					}
+				}
+			}
+		}';
+		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testConfig);
+		var config = relaxationInstance.getConfig();
+		
+		/* Make method for finding the correct config and building args public. */
+		makePublic(relaxationInstance,"findResourceConfig");
+		makePublic(relaxationInstance,"gatherRequestArguments");
+		
+		/* Test widget POST arg merging. */
+		var Match = relaxationInstance.findResourceConfig("/widget/999/something","POST");
+		var args = relaxationInstance.gatherRequestArguments(ResourceMatch = Match, RequestBody = '{"isActive":true, "color":"red"}', URLScope = {"urlArg":1}, FormScope = {"formArg":2} );
+		AssertIsStruct(args);
+		AssertTrue(StructKeyExists(args,"WidgetID"), 'Missing "WidgetID" path key in args.');
+		AssertTrue(StructKeyExists(args,"isActive"), 'Missing "isActive" payload key in args.');
+		AssertTrue(StructKeyExists(args,"urlArg"), 'Missing "urlArg" URL key in args.');
+		AssertTrue(StructKeyExists(args,"formArg"), 'Missing "formArg" FORM key in args.');
+		
+		/* Test product POST arg merging. */
+		var Match = relaxationInstance.findResourceConfig("/product","POST");
+		var args = relaxationInstance.gatherRequestArguments(ResourceMatch = Match, RequestBody = '{"isActive":true, "color":"red"}', URLScope = {"urlArg":1}, FormScope = {"formArg":2} );
+		AssertIsStruct(args);
+		/* The config for this resource+verb is to NOT merge any scopes. */
+		AssertEquals(2, ListLen(StructKeyList(args)));
+		AssertTrue(ListFindNoCase(StructKeyList(args),"ArgumentSources"));
+		AssertTrue(ListFindNoCase(StructKeyList(args),"Payload"));
+	}
+	
+	/**
 	* @hint "I test that the Authorization hook works."
 	**/
 	public void function authorization_hook_should_work() {
@@ -222,181 +397,6 @@ component extends="mxunit.framework.TestCase" {
 	}
 	
 	/**
-	* @hint "I test that argument config defaults work."
-	**/
-	public void function argument_config_defaults_should_work() {
-		var testConfig = '{
-			"RequestPatterns": {
-				"/product/{ProductID}/": {
-					"PUT": {
-						"Bean": "ProductService"
-						,"Method": "updateProduct"
-					}
-				}
-			}
-		}';
-		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testConfig);
-		var config = relaxationInstance.getConfig();
-		
-		AssertIsStruct(config.Resources[1].PUT.Arguments);
-		AssertEquals('Payload', config.Resources[1].PUT.Arguments.PayloadArgument);
-		AssertTrue(config.Resources[1].PUT.Arguments.MergeScopes.Path);
-		AssertTrue(config.Resources[1].PUT.Arguments.MergeScopes.Payload);
-		AssertTrue(config.Resources[1].PUT.Arguments.MergeScopes.URL);
-		AssertTrue(config.Resources[1].PUT.Arguments.MergeScopes.Form);
-	}
-	
-	/**
-	* @hint "I test that argument config defaults work."
-	**/
-	public void function argument_config_top_level_should_work() {
-		var testConfig = '{
-			"Arguments": {
-				"PayloadArgument": "TestPayloadArg"
-				,"MergeScopes": {
-					"Path": false
-					,"Payload": false
-					,"URL": false
-					,"Form": false
-				}
-			}
-			,"RequestPatterns": {
-				"/product/{ProductID}/": {
-					"PUT": {
-						"Bean": "ProductService"
-						,"Method": "updateProduct"
-					}
-				}
-			}
-		}';
-		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testConfig);
-		var config = relaxationInstance.getConfig();
-		
-		AssertIsStruct(config.Resources[1].PUT.Arguments);
-		AssertEquals('TestPayloadArg', config.Resources[1].PUT.Arguments.PayloadArgument);
-		AssertFalse(config.Resources[1].PUT.Arguments.MergeScopes.Path);
-		AssertFalse(config.Resources[1].PUT.Arguments.MergeScopes.Payload);
-		AssertFalse(config.Resources[1].PUT.Arguments.MergeScopes.URL);
-		AssertFalse(config.Resources[1].PUT.Arguments.MergeScopes.Form);
-	}
-	
-	/**
-	* @hint "I test that argument config defaults work."
-	**/
-	public void function argument_config_verb_level_should_work() {
-		var testConfig = '{
-			"Arguments": {
-				"PayloadArgument": "TestPayloadArg"
-				,"MergeScopes": {
-					"Path": true
-					,"Payload": true
-					,"URL": true
-				}
-			}
-			,"RequestPatterns": {
-				"/product/{ProductID}/": {
-					"PUT": {
-						"Bean": "ProductService"
-						,"Method": "updateProduct"
-						,"Arguments": {
-							"PayloadArgument": "Product"
-							,"MergeScopes": {
-								"Payload": false
-							}
-						}
-					}
-				}
-			}
-		}';
-		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testConfig);
-		var config = relaxationInstance.getConfig();
-		
-		AssertIsStruct(config.Resources[1].PUT.Arguments);
-		AssertEquals('Product', config.Resources[1].PUT.Arguments.PayloadArgument);
-		AssertTrue(config.Resources[1].PUT.Arguments.MergeScopes.Path);
-		AssertFalse(config.Resources[1].PUT.Arguments.MergeScopes.Payload);
-		AssertTrue(config.Resources[1].PUT.Arguments.MergeScopes.URL);
-		AssertTrue(config.Resources[1].PUT.Arguments.MergeScopes.Form);
-	}
-	
-	/**
-	* @hint "I test that the payload argument is used to build arguments."
-	**/
-	public void function argument_merge_config_works_when_building_arguments() {
-		var testConfig = '{
-			"RequestPatterns": {
-				"/widget/{WidgetID}/something": {
-					"POST": {
-						"Bean": "WidgetService"
-						,"Method": "addSomething"
-						,"Arguments": {
-							"MergeScopes": {
-								"Path": true
-								,"Payload": true
-								,"URL": true
-								,"Form": true
-							}
-						}
-					}
-				}
-				,"/product": {
-					"POST": {
-						"Bean": "ProductService"
-						,"Method": "addProduct"
-						,"Arguments": {
-							"MergeScopes": {
-								"Path": false
-								,"Payload": false
-								,"URL": false
-								,"Form": false
-							}
-						}
-					}
-				}
-				,"/product/{ProductID}/": {
-					"GET": {
-						"Bean": "ProductService"
-						,"Method": "getProductByID"
-					}
-					,"PUT": {
-						"Bean": "ProductService"
-						,"Method": "updateProduct"
-						,"Arguments": {
-							"MergeScopes": {
-								"Payload": false
-							}
-						}
-					}
-				}
-			}
-		}';
-		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testConfig);
-		var config = relaxationInstance.getConfig();
-		
-		/* Make method for finding the correct config and building args public. */
-		makePublic(relaxationInstance,"findResourceConfig");
-		makePublic(relaxationInstance,"gatherRequestArguments");
-		
-		/* Test widget POST arg merging. */
-		var Match = relaxationInstance.findResourceConfig("/widget/999/something","POST");
-		var args = relaxationInstance.gatherRequestArguments(ResourceMatch = Match, RequestBody = '{"isActive":true, "color":"red"}', URLScope = {"urlArg":1}, FormScope = {"formArg":2} );
-		AssertIsStruct(args);
-		AssertTrue(StructKeyExists(args,"WidgetID"), 'Missing "WidgetID" path key in args.');
-		AssertTrue(StructKeyExists(args,"isActive"), 'Missing "isActive" payload key in args.');
-		AssertTrue(StructKeyExists(args,"urlArg"), 'Missing "urlArg" URL key in args.');
-		AssertTrue(StructKeyExists(args,"formArg"), 'Missing "formArg" FORM key in args.');
-		
-		/* Test product POST arg merging. */
-		var Match = relaxationInstance.findResourceConfig("/product","POST");
-		var args = relaxationInstance.gatherRequestArguments(ResourceMatch = Match, RequestBody = '{"isActive":true, "color":"red"}', URLScope = {"urlArg":1}, FormScope = {"formArg":2} );
-		AssertIsStruct(args);
-		/* The config for this resource+verb is to NOT merge any scopes. */
-		AssertEquals(2, ListLen(StructKeyList(args)));
-		AssertTrue(ListFindNoCase(StructKeyList(args),"ArgumentSources"));
-		AssertTrue(ListFindNoCase(StructKeyList(args),"Payload"));
-	}
-	
-	/**
 	* @hint "I test that the payload argument is used to build arguments."
 	**/
 	public void function payload_argument_is_applied_when_building_arguments() {
@@ -498,6 +498,32 @@ component extends="mxunit.framework.TestCase" {
 		assertEquals(true, result.Success);
 		assertTrue(isJSON(result.Output),"Shoot result was not JSON.");
 		assertTrue(FindNoCase("Hot Sauce!",result.Output),"Part of the JSON string that should be there IS NOT.");
+	}
+	
+	/**
+	* @hint "I test that throwing specific errorcodes are mapped to specific http status codes."
+	**/
+	public void function thrown_errors_should_map_correctly() {
+		var httpUtil = mock();
+		httpUtil.setResponseHeader('{string}', '{string}').returns();
+		httpUtil.setResponseContentType('{string}').returns();
+		httpUtil.setResponseStatus(403, 'Forbidden').returns();
+		httpUtil.setResponseStatus(404, 'Not Found').returns();
+		variables.RestFramework.setHTTPUtil( httpUtil );
+		
+		/* Mock a known request state to test status code mapping. */
+		InjectMethod( variables.RestFramework, this, 'return403Result', 'processRequest' );
+		/* Call handleRequest. */
+		var result = variables.RestFramework.handleRequest( '/na' );
+		httpUtil.verify().setResponseStatus(403, 'Forbidden');
+		AssertEquals(return403Result().ErrorMessage, result.response.responseText);
+		
+		/* Mock a known request state to test status code mapping. */
+		InjectMethod( variables.RestFramework, this, 'return404Result', 'processRequest' );
+		/* Call handleRequest. */
+		var result2 = variables.RestFramework.handleRequest( '/na' );
+		httpUtil.verify().setResponseStatus(404, 'Not Found');
+		AssertEquals(return404Result().ErrorMessage, result2.response.responseText);
 	}
 	
 	/**
@@ -706,6 +732,36 @@ component extends="mxunit.framework.TestCase" {
 	**/
 	private struct function getFrameworkConfig() {
 		return DeserializeJSON(fileRead(expandPath(variables.ConfigPath)));
+	}
+	
+	/**
+	* @hint "I return a result that should trigger a 403."
+	**/
+	private struct function return403Result() {
+		var result = {
+			"Success" = false
+			,"Output" = ""
+			,"Error" = "NotAuthorized"
+			,"ErrorMessage" = "You can't touch this!"
+			,"AllowedVerbs" = ""
+			,"CacheHeaderSeconds" = ""
+		};
+		return result;
+	}
+	
+	/**
+	* @hint "I return a result that should trigger a 404."
+	**/
+	private struct function return404Result() {
+		var result = {
+			"Success" = false
+			,"Output" = ""
+			,"Error" = "ResourceNotFound"
+			,"ErrorMessage" = "Where's the beef!"
+			,"AllowedVerbs" = ""
+			,"CacheHeaderSeconds" = ""
+		};
+		return result;
 	}
 	
 	/**
