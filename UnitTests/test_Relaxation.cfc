@@ -397,6 +397,46 @@ component extends="mxunit.framework.TestCase" {
 	}
 	
 	/**
+	* @hint "I test that jsonp default configuration is applied appropriately."
+	**/
+	public void function jsonp_default_config_is_applied_correctly() {
+		/* TODO: For reference. 
+		 	,"JSONP": {
+				"enabled": true
+				,"callbackParameter": "jsonp"
+			}
+		*/
+		var testConfig = '{
+			"RequestPatterns": {
+				"/customer/{ProductID}/": {
+					"GET": {
+						"Bean": "ProductService",
+						"Method": "getProductByID",
+						"JSONP": {
+							"enabled": false
+						}
+					},
+					"PUT": {
+						"Bean": "CustomerService",
+						"Method": "updateCustomer",
+						"WrapSimpleValues": {
+							"objectProperty": "id"
+						}
+					}
+				}
+			}
+		}';
+		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testConfig);
+		var config = relaxationInstance.getConfig();
+
+		assertFalse(config.Resources[1].GET.JSONP.enabled);
+		assertEquals('requestResult', config.Resources[1].GET.WrapSimpleValues.objectProperty);
+		
+		assertTrue(config.Resources[1].PUT.JSONP.enabled);
+		assertEquals('id', config.Resources[1].PUT.WrapSimpleValues.objectProperty);
+	}
+	
+	/**
 	* @hint "I test that the payload argument is used to build arguments."
 	**/
 	public void function payload_argument_is_applied_when_building_arguments() {
