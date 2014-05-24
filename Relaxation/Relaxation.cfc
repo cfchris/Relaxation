@@ -272,6 +272,11 @@ component
 			} else {
 				result.Output = SerializeJSON(methodResult);
 			}
+			if ( arguments.Verb == "GET" && resource.JSONP.enabled && StructKeyExists(arguments.URLScope, resource.JSONP.callbackParameter) ) {
+				/* Add JSONP "padding". */
+				var jsonpMethod = arguments.URLScope[resource.JSONP.callbackParameter];
+				result.Output = jsonpMethod & "(" & result.Output & ")";
+			}
 		} else {
 			result.Output = "";
 		}

@@ -397,6 +397,45 @@ component extends="mxunit.framework.TestCase" {
 	}
 	
 	/**
+	* @hint "I test that the JSONP callback is applied when specified."
+	**/
+	public void function jsonp_config_is_applied_when_appropriate() {
+		var testConfig = '{
+			"JSONP": {
+				"enabled": true
+			}
+			,"RequestPatterns": {
+				"/product/": {
+					"GET": {
+						"Bean": "ProductService",
+						"Method": "getAllProducts"
+					}
+				}
+			}
+		}';
+		var instance = new Relaxation.Relaxation.Relaxation(testConfig);
+		instance.setBeanFactory( getBeanFactory() );
+		instance.setHttpUtil( getHttpUtil() );
+		
+		/* Test a call without asking for JSONP. */
+		var jsonResult = instance.processRequest( 
+			Path = '/product/',
+			Verb = 'GET',
+			RequestBody = '', URLScope = {}, FormScope = {}
+		);
+		AssertTrue( isJSON(jsonResult.Output) );
+		
+		/* Test a call requesting JSONP. */
+		var jsonResult = instance.processRequest(
+			Path = '/product/',
+			Verb = 'GET',
+			RequestBody = '', URLScope = {"jsonp"="myJSFunction"}, FormScope = {}
+		);
+		debug(jsonResult);
+		AssertTrue( ReFindNoCase("^myJSFunction\(", jsonResult.Output) );
+	}
+	
+	/**
 	* @hint "I test that jsonp default configuration is applied appropriately."
 	**/
 	public void function jsonp_default_config_is_applied_correctly() {
@@ -405,7 +444,7 @@ component extends="mxunit.framework.TestCase" {
 				"/product/": {
 					"GET": {
 						"Bean": "ProductService",
-						"Method": "getProducts"
+						"Method": "getAllProducts"
 					}
 				}
 			}
@@ -431,7 +470,7 @@ component extends="mxunit.framework.TestCase" {
 				"/product/": {
 					"GET": {
 						"Bean": "ProductService"
-						,"Method": "getProducts"
+						,"Method": "getAllProducts"
 					}
 				}
 				,"/product/{ProductID}/": {
@@ -579,11 +618,7 @@ component extends="mxunit.framework.TestCase" {
 	* @hint "I test that throwing specific errorcodes are mapped to specific http status codes."
 	**/
 	public void function thrown_errors_should_map_correctly() {
-		var httpUtil = mock();
-		httpUtil.setResponseHeader('{string}', '{string}').returns();
-		httpUtil.setResponseContentType('{string}').returns();
-		httpUtil.setResponseStatus(403, 'Forbidden').returns();
-		httpUtil.setResponseStatus(404, 'Not Found').returns();
+		var httpUtil = getHttpUtil();
 		variables.RestFramework.setHTTPUtil( httpUtil );
 		
 		/* Mock a known request state to test status code mapping. */
@@ -800,6 +835,18 @@ component extends="mxunit.framework.TestCase" {
 		var service = new Relaxation.UnitTests.ProductService();
 		bf.getBean('ProductService').returns( service );
 		return bf;
+	}
+	
+	/**
+	* @hint "I return a mock httpUtil for testing."
+	**/
+	private any function getHttpUtil() {
+		var httpUtil = mock();
+		httpUtil.setResponseHeader('{string}', '{string}').returns();
+		httpUtil.setResponseContentType('{string}').returns();
+		httpUtil.setResponseStatus(403, 'Forbidden').returns();
+		httpUtil.setResponseStatus(404, 'Not Found').returns();
+		return httpUtil;
 	}
 	
 	/**
