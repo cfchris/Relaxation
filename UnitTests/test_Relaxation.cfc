@@ -400,40 +400,75 @@ component extends="mxunit.framework.TestCase" {
 	* @hint "I test that jsonp default configuration is applied appropriately."
 	**/
 	public void function jsonp_default_config_is_applied_correctly() {
-		/* TODO: For reference. 
-		 	,"JSONP": {
-				"enabled": true
-				,"callbackParameter": "jsonp"
-			}
-		*/
 		var testConfig = '{
 			"RequestPatterns": {
-				"/customer/{ProductID}/": {
+				"/product/": {
 					"GET": {
 						"Bean": "ProductService",
-						"Method": "getProductByID",
-						"JSONP": {
-							"enabled": false
+						"Method": "getProducts"
+					}
+				}
+			}
+		}';
+		var instance = new Relaxation.Relaxation.Relaxation(testConfig);
+		var config = instance.getConfig();
+		
+		assertFalse(config.Resources[1].GET.JSONP.enabled);
+		assertFalse(StructKeyExists(config.Resources[1].GET.JSONP, "callbackParameter"), "callbackParameter key should not exist when the setting is not enabled.");
+	}
+	
+	/**
+	* @hint "I test that jsonp manual configuration is applied appropriately."
+	**/
+	public void function jsonp_manual_config_is_applied_correctly() {
+		/* Example config with param specified at the top and overwritten for resources. */
+		var testConfig = '{
+			"JSONP": {
+				"enabled": false
+				,"callbackParameter": "topLevelCB"
+			}
+			,"RequestPatterns": {
+				"/product/": {
+					"GET": {
+						"Bean": "ProductService"
+						,"Method": "getProducts"
+					}
+				}
+				,"/product/{ProductID}/": {
+					"GET": {
+						"Bean": "ProductService"
+						,"Method": "getProductByID"
+						,"JSONP": {
+							"enabled": true
 						}
-					},
-					"PUT": {
-						"Bean": "CustomerService",
-						"Method": "updateCustomer",
-						"WrapSimpleValues": {
-							"objectProperty": "id"
+					}
+				}
+				,"/product/type": {
+					"GET": {
+						"Bean": "ProductService"
+						,"Method": "getProductTypes"
+						,"JSONP": {
+							"enabled": true
+							,"callbackParameter": "getLevelCB"
 						}
 					}
 				}
 			}
 		}';
-		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testConfig);
-		var config = relaxationInstance.getConfig();
-
-		assertFalse(config.Resources[1].GET.JSONP.enabled);
-		assertEquals('requestResult', config.Resources[1].GET.WrapSimpleValues.objectProperty);
+		var instance = new Relaxation.Relaxation.Relaxation(testConfig);
+		MakePublic(instance, "findResourceConfig", "findResourceConfig");
 		
-		assertTrue(config.Resources[1].PUT.JSONP.enabled);
-		assertEquals('id', config.Resources[1].PUT.WrapSimpleValues.objectProperty);
+		var config = instance.findResourceConfig( '/product/', 'GET' );
+		assertFalse(config.JSONP.enabled);
+		assertFalse(StructKeyExists(config.JSONP, "callbackParameter"), "callbackParameter key should not exist when the setting is not enabled.");
+		
+		var config = instance.findResourceConfig( '/product/123', 'GET' );
+		assertTrue(config.JSONP.enabled);
+		assertEquals('topLevelCB', config.JSONP.callbackParameter);
+		
+		var config = instance.findResourceConfig( '/product/type/', 'GET' );
+		assertTrue(config.JSONP.enabled);
+		assertEquals('getLevelCB', config.JSONP.callbackParameter);
 	}
 	
 	/**
@@ -576,7 +611,7 @@ component extends="mxunit.framework.TestCase" {
 				"objectProperty": "requestResult"
 			},
 			"RequestPatterns": {
-				"/customer/{ProductID}/": {
+				"/product/{ProductID}/": {
 					"GET": {
 						"Bean": "ProductService",
 						"Method": "getProductByID",
@@ -585,8 +620,8 @@ component extends="mxunit.framework.TestCase" {
 						}
 					},
 					"PUT": {
-						"Bean": "CustomerService",
-						"Method": "updateCustomer",
+						"Bean": "ProductService",
+						"Method": "updateProduct",
 						"WrapSimpleValues": {
 							"objectProperty": "id"
 						}
@@ -610,7 +645,7 @@ component extends="mxunit.framework.TestCase" {
 	public void function wrap_simple_values_default_config_should_work() {
 		var testConfig = '{
 			"RequestPatterns": {
-				"/customer/{ProductID}/": {
+				"/product/{ProductID}/": {
 					"GET": {
 						"Bean": "ProductService",
 						"Method": "getProductByID",
@@ -619,8 +654,8 @@ component extends="mxunit.framework.TestCase" {
 						}
 					},
 					"PUT": {
-						"Bean": "CustomerService",
-						"Method": "updateCustomer",
+						"Bean": "ProductService",
+						"Method": "updateProduct",
 						"WrapSimpleValues": {
 							"objectProperty": "id"
 						}
@@ -659,7 +694,7 @@ component extends="mxunit.framework.TestCase" {
 						}
 					},
 					"PUT": {
-						"Bean": "CustomerService",
+						"Bean": "ProductService",
 						"Method": "saveProduct",
 						"WrapSimpleValues": {
 							"objectProperty": "id"
@@ -712,7 +747,7 @@ component extends="mxunit.framework.TestCase" {
 						}
 					},
 					"PUT": {
-						"Bean": "CustomerService",
+						"Bean": "ProductService",
 						"Method": "saveProduct",
 						"WrapSimpleValues": {
 							"objectProperty": "id"

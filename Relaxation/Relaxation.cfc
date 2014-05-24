@@ -23,6 +23,10 @@ component
 				,"Form": true
 			}
 		}
+		,"JSONP": {
+			"enabled": false
+			,"callbackParameter": "jsonp"
+		}
 		,"WrapSimpleValues" = {
 			"enabled" = true
 			,"objectProperty" = "result"
@@ -289,18 +293,23 @@ component
 		} else if ( StructKeyExists(arguments.Config,"Patterns") ) {
 			var Patterns = arguments.Config.Patterns; 
 		}
-		if ( !StructKeyExists(arguments.Config, "WrapSimpleValues") ) {
-			arguments.Config["WrapSimpleValues"] = {};
-		}
+		/* Apply defaults to top level config. */
 		if ( !StructKeyExists(arguments.Config, "Arguments") ) {
 			arguments.Config["Arguments"] = {};
 		}
-		StructAppend(arguments.Config.WrapSimpleValues, variables.Defaults.WrapSimpleValues, false);
+		if ( !StructKeyExists(arguments.Config, "JSONP") ) {
+			arguments.Config["JSONP"] = {};
+		}
+		if ( !StructKeyExists(arguments.Config, "WrapSimpleValues") ) {
+			arguments.Config["WrapSimpleValues"] = {};
+		}
 		StructAppend(arguments.Config.Arguments, variables.Defaults.Arguments, false);
 		StructAppend(arguments.Config.Arguments.MergeScopes, variables.Defaults.Arguments.MergeScopes, false);
-		variables.Config.Resources = [];
+		StructAppend(arguments.Config.JSONP, variables.Defaults.JSONP, false);
+		StructAppend(arguments.Config.WrapSimpleValues, variables.Defaults.WrapSimpleValues, false);
 		/* By sorting the keys this way, static patterns should take priority over dynamic ones. */
 		var keyList = ListSort(StructKeyList(Patterns), 'textnocase', 'asc');
+		variables.Config.Resources = [];
 		for ( var key in ListToArray(keyList) ) {
 			var resource = Patterns[key];
 			/* Build "AllowedVerbs" for "Allow" header. */
@@ -318,19 +327,27 @@ component
 			var httpRequestMethods = variables.HTTPUtil.getPossibleRequestMethods();
 			for ( var resourceKey in resource ) {
 				if ( ArrayFindNoCase(httpRequestMethods, resourceKey) ) {
-					if ( !StructKeyExists(resource[resourceKey], "WrapSimpleValues") ) {
-						resource[resourceKey]["WrapSimpleValues"] = {};
-					}
 					if ( !StructKeyExists(resource[resourceKey], "Arguments") ) {
 						resource[resourceKey]["Arguments"] = {};
 					}
-					StructAppend(resource[resourceKey].WrapSimpleValues, arguments.Config.WrapSimpleValues, false);
+					if ( !StructKeyExists(resource[resourceKey], "JSONP") ) {
+						resource[resourceKey]["JSONP"] = {};
+					}
+					if ( !StructKeyExists(resource[resourceKey], "WrapSimpleValues") ) {
+						resource[resourceKey]["WrapSimpleValues"] = {};
+					}
 					StructAppend(resource[resourceKey].Arguments, arguments.Config.Arguments, false);
 					StructAppend(resource[resourceKey].Arguments.MergeScopes, arguments.Config.Arguments.MergeScopes, false);
 					if ( StructKeyExists(resource[resourceKey], "DefaultArguments") && IsStruct(resource[resourceKey].DefaultArguments) ) {
 						/* Remap legacy config to new position. */
 						resource[resourceKey].Arguments["Defaults"] = resource[resourceKey].DefaultArguments;
 					}
+					StructAppend(resource[resourceKey].JSONP, arguments.Config.JSONP, false);
+					if ( !resource[resourceKey].JSONP.enabled ) {
+						/* Remove callbackParameter if JSONP disabled. */
+						StructDelete(resource[resourceKey].JSONP, "callbackParameter");
+					}
+					StructAppend(resource[resourceKey].WrapSimpleValues, arguments.Config.WrapSimpleValues, false);
 				}
 			}
 			/* Add resources with arguments in the path to the bottom. */
