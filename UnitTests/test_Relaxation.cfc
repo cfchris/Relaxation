@@ -254,7 +254,6 @@ component extends="mxunit.framework.TestCase" {
 		assertIsStruct(config);
 		assertIsStruct(config.RequestPatterns);
 		assertTrue(structKeyExists(config.RequestPatterns,"/product"),"The (/product) resource was not defined in the config.");
-		//debug(config);
 		/* Test with the expanded path. */
 		var config = variables.RestFramework.translateConfig( expandPath(variables.ConfigPath) );
 		assertIsStruct(config);
@@ -289,7 +288,6 @@ component extends="mxunit.framework.TestCase" {
 		makePublic(variables.RestFramework,"findResourceConfig");
 		/* Test static URL. */
 		var match = variables.RestFramework.findResourceConfig( "/product/colors", "GET" );
-		//debug(match);
 		assertIsStruct(match);
 		assertEquals(true, match.located);
 		assertEquals("ProductService", match.Bean);
@@ -297,7 +295,6 @@ component extends="mxunit.framework.TestCase" {
 		assertEquals("GET,OPTIONS", match.AllowedVerbs);
 		/* Test dynamic URL. */
 		var match = variables.RestFramework.findResourceConfig( "/product/1", "GET" );
-		//debug(match);
 		assertIsStruct(match);
 		assertEquals(true, match.located);
 		assertEquals("ProductService", match.Bean);
@@ -305,7 +302,6 @@ component extends="mxunit.framework.TestCase" {
 		assertEquals("GET,OPTIONS,POST", match.AllowedVerbs);
 		/* Test deeper dynamic URL. */
 		var match = variables.RestFramework.findResourceConfig( "/product/1/colors", "GET" );
-		//debug(match);
 		assertIsStruct(match);
 		assertEquals(true, match.located);
 		assertEquals("ProductService", match.Bean);
@@ -343,7 +339,6 @@ component extends="mxunit.framework.TestCase" {
 		var RequestBodyValues = DeserializeJSON(RequestBody);
 		var Match = variables.RestFramework.findResourceConfig("/product/321/colors/red/priority/from-uri","POST");
 		var args = variables.RestFramework.gatherRequestArguments(ResourceMatch = Match, RequestBody = RequestBody, URLScope = URLScope, FormScope = FormScope );
-		//debug(args);
 		assertIsStruct(args);
 		assertIsStruct(args.ArgumentSources);
 		assertIsStruct(args.ArgumentSources.URLScope);
@@ -366,14 +361,12 @@ component extends="mxunit.framework.TestCase" {
 		/* LEGACY: Run a request that has "DefaultArguments" configured. */
 		var Match = variables.RestFramework.findResourceConfig("/product/all-active","GET");
 		var args = variables.RestFramework.gatherRequestArguments(ResourceMatch = Match, RequestBody = "", URLScope = {}, FormScope = {} );
-		//debug(args);
 		assertEquals(1, args.Active);
 		assertEquals('Available', args.Status);
 		
 		/* Run a request that has "Arguments.Defaults" configured. */
 		var Match = variables.RestFramework.findResourceConfig("/product/inactive","GET");
 		var args = variables.RestFramework.gatherRequestArguments(ResourceMatch = Match, RequestBody = "", URLScope = {}, FormScope = {} );
-		//debug(args);
 		assertEquals(0, args.Active);
 	}
 	
@@ -390,10 +383,122 @@ component extends="mxunit.framework.TestCase" {
 		assertEquals(true, result.Rendered);
 		/* Test bad response */
 		result = variables.RestFramework.handleRequest( Path = "/product/this/will/never/work", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
-		//debug(result);
 		assertIsStruct(result);
 		assertEquals(false, result.Success);
 		assertEquals(true, result.Rendered);
+	}
+	
+	/**
+	* @hint "I test that the JSONP callback is applied when specified."
+	**/
+	public void function jsonp_config_is_applied_when_appropriate() {
+		var testConfig = '{
+			"JSONP": {
+				"enabled": true
+			}
+			,"RequestPatterns": {
+				"/product/": {
+					"GET": {
+						"Bean": "ProductService",
+						"Method": "getAllProducts"
+					}
+				}
+			}
+		}';
+		var instance = new Relaxation.Relaxation.Relaxation(testConfig);
+		instance.setBeanFactory( getBeanFactory() );
+		instance.setHttpUtil( getHttpUtil() );
+		
+		/* Test a call without asking for JSONP. */
+		var jsonResult = instance.processRequest( 
+			Path = '/product/',
+			Verb = 'GET',
+			RequestBody = '', URLScope = {}, FormScope = {}
+		);
+		AssertTrue( isJSON(jsonResult.Output) );
+		
+		/* Test a call requesting JSONP. */
+		var jsonResult = instance.processRequest(
+			Path = '/product/',
+			Verb = 'GET',
+			RequestBody = '', URLScope = {"jsonp"="myJSFunction"}, FormScope = {}
+		);
+		AssertTrue( ReFindNoCase("^myJSFunction\(", jsonResult.Output) );
+	}
+	
+	/**
+	* @hint "I test that jsonp default configuration is applied appropriately."
+	**/
+	public void function jsonp_default_config_is_applied_correctly() {
+		var testConfig = '{
+			"RequestPatterns": {
+				"/product/": {
+					"GET": {
+						"Bean": "ProductService",
+						"Method": "getAllProducts"
+					}
+				}
+			}
+		}';
+		var instance = new Relaxation.Relaxation.Relaxation(testConfig);
+		var config = instance.getConfig();
+		
+		assertFalse(config.Resources[1].GET.JSONP.enabled);
+		assertFalse(StructKeyExists(config.Resources[1].GET.JSONP, "callbackParameter"), "callbackParameter key should not exist when the setting is not enabled.");
+	}
+	
+	/**
+	* @hint "I test that jsonp manual configuration is applied appropriately."
+	**/
+	public void function jsonp_manual_config_is_applied_correctly() {
+		/* Example config with param specified at the top and overwritten for resources. */
+		var testConfig = '{
+			"JSONP": {
+				"enabled": false
+				,"callbackParameter": "topLevelCB"
+			}
+			,"RequestPatterns": {
+				"/product/": {
+					"GET": {
+						"Bean": "ProductService"
+						,"Method": "getAllProducts"
+					}
+				}
+				,"/product/{ProductID}/": {
+					"GET": {
+						"Bean": "ProductService"
+						,"Method": "getProductByID"
+						,"JSONP": {
+							"enabled": true
+						}
+					}
+				}
+				,"/product/type": {
+					"GET": {
+						"Bean": "ProductService"
+						,"Method": "getProductTypes"
+						,"JSONP": {
+							"enabled": true
+							,"callbackParameter": "getLevelCB"
+						}
+					}
+				}
+			}
+		}';
+		var instance = new Relaxation.Relaxation.Relaxation(testConfig);
+		MakePublic(instance, "findResourceConfig", "findResourceConfig");
+		
+		var config = instance.findResourceConfig( '/product/', 'GET' );
+		assertFalse(config.JSONP.enabled);
+		assertFalse(StructKeyExists(config.JSONP, "callbackParameter"), "callbackParameter key should not exist when the setting is not enabled.");
+		
+		var config = instance.findResourceConfig( '/product/123', 'GET' );
+		assertTrue(config.JSONP.enabled);
+		assertEquals('topLevelCB', config.JSONP.callbackParameter);
+		
+		var config = instance.findResourceConfig( '/product/type/', 'GET' );
+		assertTrue(config.JSONP.enabled);
+		assertEquals('getLevelCB', config.JSONP.callbackParameter);
 	}
 	
 	/**
@@ -478,7 +583,6 @@ component extends="mxunit.framework.TestCase" {
 		assertTrue(FindNoCase("Hot Sauce!",result.Output),"Part of the JSON string that should be there IS NOT.");
 		/* Test empty response */
 		result = variables.RestFramework.processRequest( Path = "/product/do/nothing", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
-		//debug(result);
 		assertIsStruct(result);
 		assertTrue(!StructIsEmpty(result), "Shoot. The return struct is empty.");
 		assertEquals(true, result.Success);
@@ -504,11 +608,7 @@ component extends="mxunit.framework.TestCase" {
 	* @hint "I test that throwing specific errorcodes are mapped to specific http status codes."
 	**/
 	public void function thrown_errors_should_map_correctly() {
-		var httpUtil = mock();
-		httpUtil.setResponseHeader('{string}', '{string}').returns();
-		httpUtil.setResponseContentType('{string}').returns();
-		httpUtil.setResponseStatus(403, 'Forbidden').returns();
-		httpUtil.setResponseStatus(404, 'Not Found').returns();
+		var httpUtil = getHttpUtil();
 		variables.RestFramework.setHTTPUtil( httpUtil );
 		
 		/* Mock a known request state to test status code mapping. */
@@ -536,7 +636,7 @@ component extends="mxunit.framework.TestCase" {
 				"objectProperty": "requestResult"
 			},
 			"RequestPatterns": {
-				"/customer/{ProductID}/": {
+				"/product/{ProductID}/": {
 					"GET": {
 						"Bean": "ProductService",
 						"Method": "getProductByID",
@@ -545,8 +645,8 @@ component extends="mxunit.framework.TestCase" {
 						}
 					},
 					"PUT": {
-						"Bean": "CustomerService",
-						"Method": "updateCustomer",
+						"Bean": "ProductService",
+						"Method": "updateProduct",
 						"WrapSimpleValues": {
 							"objectProperty": "id"
 						}
@@ -570,7 +670,7 @@ component extends="mxunit.framework.TestCase" {
 	public void function wrap_simple_values_default_config_should_work() {
 		var testConfig = '{
 			"RequestPatterns": {
-				"/customer/{ProductID}/": {
+				"/product/{ProductID}/": {
 					"GET": {
 						"Bean": "ProductService",
 						"Method": "getProductByID",
@@ -579,8 +679,8 @@ component extends="mxunit.framework.TestCase" {
 						}
 					},
 					"PUT": {
-						"Bean": "CustomerService",
-						"Method": "updateCustomer",
+						"Bean": "ProductService",
+						"Method": "updateProduct",
 						"WrapSimpleValues": {
 							"objectProperty": "id"
 						}
@@ -619,7 +719,7 @@ component extends="mxunit.framework.TestCase" {
 						}
 					},
 					"PUT": {
-						"Bean": "CustomerService",
+						"Bean": "ProductService",
 						"Method": "saveProduct",
 						"WrapSimpleValues": {
 							"objectProperty": "id"
@@ -672,7 +772,7 @@ component extends="mxunit.framework.TestCase" {
 						}
 					},
 					"PUT": {
-						"Bean": "CustomerService",
+						"Bean": "ProductService",
 						"Method": "saveProduct",
 						"WrapSimpleValues": {
 							"objectProperty": "id"
@@ -725,6 +825,18 @@ component extends="mxunit.framework.TestCase" {
 		var service = new Relaxation.UnitTests.ProductService();
 		bf.getBean('ProductService').returns( service );
 		return bf;
+	}
+	
+	/**
+	* @hint "I return a mock httpUtil for testing."
+	**/
+	private any function getHttpUtil() {
+		var httpUtil = mock();
+		httpUtil.setResponseHeader('{string}', '{string}').returns();
+		httpUtil.setResponseContentType('{string}').returns();
+		httpUtil.setResponseStatus(403, 'Forbidden').returns();
+		httpUtil.setResponseStatus(404, 'Not Found').returns();
+		return httpUtil;
 	}
 	
 	/**
