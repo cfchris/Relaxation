@@ -254,7 +254,6 @@ component extends="mxunit.framework.TestCase" {
 		assertIsStruct(config);
 		assertIsStruct(config.RequestPatterns);
 		assertTrue(structKeyExists(config.RequestPatterns,"/product"),"The (/product) resource was not defined in the config.");
-		//debug(config);
 		/* Test with the expanded path. */
 		var config = variables.RestFramework.translateConfig( expandPath(variables.ConfigPath) );
 		assertIsStruct(config);
@@ -289,7 +288,6 @@ component extends="mxunit.framework.TestCase" {
 		makePublic(variables.RestFramework,"findResourceConfig");
 		/* Test static URL. */
 		var match = variables.RestFramework.findResourceConfig( "/product/colors", "GET" );
-		//debug(match);
 		assertIsStruct(match);
 		assertEquals(true, match.located);
 		assertEquals("ProductService", match.Bean);
@@ -297,7 +295,6 @@ component extends="mxunit.framework.TestCase" {
 		assertEquals("GET,OPTIONS", match.AllowedVerbs);
 		/* Test dynamic URL. */
 		var match = variables.RestFramework.findResourceConfig( "/product/1", "GET" );
-		//debug(match);
 		assertIsStruct(match);
 		assertEquals(true, match.located);
 		assertEquals("ProductService", match.Bean);
@@ -305,7 +302,6 @@ component extends="mxunit.framework.TestCase" {
 		assertEquals("GET,OPTIONS,POST", match.AllowedVerbs);
 		/* Test deeper dynamic URL. */
 		var match = variables.RestFramework.findResourceConfig( "/product/1/colors", "GET" );
-		//debug(match);
 		assertIsStruct(match);
 		assertEquals(true, match.located);
 		assertEquals("ProductService", match.Bean);
@@ -343,7 +339,6 @@ component extends="mxunit.framework.TestCase" {
 		var RequestBodyValues = DeserializeJSON(RequestBody);
 		var Match = variables.RestFramework.findResourceConfig("/product/321/colors/red/priority/from-uri","POST");
 		var args = variables.RestFramework.gatherRequestArguments(ResourceMatch = Match, RequestBody = RequestBody, URLScope = URLScope, FormScope = FormScope );
-		//debug(args);
 		assertIsStruct(args);
 		assertIsStruct(args.ArgumentSources);
 		assertIsStruct(args.ArgumentSources.URLScope);
@@ -366,14 +361,12 @@ component extends="mxunit.framework.TestCase" {
 		/* LEGACY: Run a request that has "DefaultArguments" configured. */
 		var Match = variables.RestFramework.findResourceConfig("/product/all-active","GET");
 		var args = variables.RestFramework.gatherRequestArguments(ResourceMatch = Match, RequestBody = "", URLScope = {}, FormScope = {} );
-		//debug(args);
 		assertEquals(1, args.Active);
 		assertEquals('Available', args.Status);
 		
 		/* Run a request that has "Arguments.Defaults" configured. */
 		var Match = variables.RestFramework.findResourceConfig("/product/inactive","GET");
 		var args = variables.RestFramework.gatherRequestArguments(ResourceMatch = Match, RequestBody = "", URLScope = {}, FormScope = {} );
-		//debug(args);
 		assertEquals(0, args.Active);
 	}
 	
@@ -390,7 +383,6 @@ component extends="mxunit.framework.TestCase" {
 		assertEquals(true, result.Rendered);
 		/* Test bad response */
 		result = variables.RestFramework.handleRequest( Path = "/product/this/will/never/work", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
-		//debug(result);
 		assertIsStruct(result);
 		assertEquals(false, result.Success);
 		assertEquals(true, result.Rendered);
@@ -431,7 +423,6 @@ component extends="mxunit.framework.TestCase" {
 			Verb = 'GET',
 			RequestBody = '', URLScope = {"jsonp"="myJSFunction"}, FormScope = {}
 		);
-		debug(jsonResult);
 		AssertTrue( ReFindNoCase("^myJSFunction\(", jsonResult.Output) );
 	}
 	
@@ -592,7 +583,6 @@ component extends="mxunit.framework.TestCase" {
 		assertTrue(FindNoCase("Hot Sauce!",result.Output),"Part of the JSON string that should be there IS NOT.");
 		/* Test empty response */
 		result = variables.RestFramework.processRequest( Path = "/product/do/nothing", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
-		//debug(result);
 		assertIsStruct(result);
 		assertTrue(!StructIsEmpty(result), "Shoot. The return struct is empty.");
 		assertEquals(true, result.Success);
