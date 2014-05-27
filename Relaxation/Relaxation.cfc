@@ -14,18 +14,18 @@ component
 	
 	variables.Config = {};
 	variables.Defaults = {
-		"Arguments": {
-			"PayloadArgument": "Payload"
-			,"MergeScopes": {
-				"Path": true
-				,"Payload": true
-				,"URL": true
-				,"Form": true
+		"Arguments" = {
+			"PayloadArgument" = "Payload"
+			,"MergeScopes" = {
+				"Path" = true
+				,"Payload" = true
+				,"URL" = true
+				,"Form" = true
 			}
 		}
-		,"JSONP": {
-			"enabled": false
-			,"callbackParameter": "jsonp"
+		,"JSONP" = {
+			"enabled" = false
+			,"callbackParameter" = "jsonp"
 		}
 		,"WrapSimpleValues" = {
 			"enabled" = true
