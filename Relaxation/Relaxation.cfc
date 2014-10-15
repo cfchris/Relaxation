@@ -10,7 +10,8 @@ component
 	property name="DocGenerator" type="component";
 	property name="HTTPUtil" type="component";
 	property name="OnErrorMethod" type="any";
-	
+	property name="LogMethod" type="any";
+
 	variables.Config = {};
 	variables.Defaults = {
 		"WrapSimpleValues" = {
@@ -39,6 +40,9 @@ component
 		}
 		if ( structKeyExists(arguments,'OnErrorMethod') ) {
 			setOnErrorMethod( arguments.OnErrorMethod );
+		}
+		if ( structKeyExists(arguments,'LogMethod') ) {
+			setLogMethod( arguments.LogMethod );
 		}
 		/* Deal with different types of configs passed in. */
 		arguments.Config = translateConfig( arguments.Config );
@@ -140,6 +144,10 @@ component
 			writeOutput( SerializeJSON(response) );
 		}
 		result["Rendered"] = true;
+		if ( !isNull(getLogMethod()) ) {
+			var OnLog = getLogMethod();
+			OnLog(SerializeJSON(arguments),SerializeJSON(result));
+		}
 		return result;
 	}
 	
