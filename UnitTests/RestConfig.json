@@ -16,6 +16,17 @@
 				}
 			}
 		}
+		,"/product/inactive": {
+			"GET": {
+				"Bean": "ProductService"
+				,"Method": "getAllProducts"
+				,"Arguments": {
+					"Defaults": {
+						"Active": 0
+					}
+				}
+			}
+		}
 		,"/product/colors": {
 			"GET": {
 				"Bean": "ProductService"

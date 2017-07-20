@@ -19,8 +19,9 @@ component
 		try {
 			var auth = ToString(ToBinary(ListRest(getRequestHeaders().Authorization, " ")));
 			return {
-				"user" = ListFirst(auth,":"),
-				"password" = ListRest(auth,":")
+				"specified" = true
+				,"user" = ListFirst(auth,":")
+				,"password" = ListRest(auth,":")
 			};
 		}
 		catch ( any e ) {
@@ -41,6 +42,7 @@ component
 	public void function promptForBasicAuth( string Realm = "REST API" ) {
 		setResponseHeader( "WWW-Authenticate", 'basic realm="' & arguments.Realm & '"' );
 		setResponseStatus( 401, "Unauthorized" );
+		abort;
 	}
 	
 	/**

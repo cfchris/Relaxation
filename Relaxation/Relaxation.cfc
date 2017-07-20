@@ -5,6 +5,7 @@ component
 {
 
 	property name="AuthorizationMethod" type="any";
+	property name="BasicAuthCheckMethod" type="any";
 	property name="BeanFactory" type="component";
 	property name="cfmlFunctions" type="component";
 	property name="DocGenerator" type="component";
@@ -13,16 +14,29 @@ component
 	
 	variables.Config = {};
 	variables.Defaults = {
-		"WrapSimpleValues" = {
-			"enabled" = "true",
-			"objectProperty" = "result"
+		"Arguments" = {
+			"PayloadArgument" = "Payload"
+			,"MergeScopes" = {
+				"Path" = true
+				,"Payload" = true
+				,"URL" = true
+				,"Form" = true
+			}
+		}
+		,"JSONP" = {
+			"enabled" = false
+			,"callbackParameter" = "jsonp"
+		}
+		,"WrapSimpleValues" = {
+			"enabled" = true
+			,"objectProperty" = "result"
 		}
 	};
 	
 	/**
 	* @hint "I initialize the object and get the routing all setup."
 	**/
-	public component function init( required any Config, component BeanFactory, any AuthorizationMethod, any OnErrorMethod ) {
+	public component function init( required any Config, component BeanFactory, any AuthorizationMethod, any BasicAuthCheckMethod, any OnErrorMethod ) {
 		/* Set object to handle CFML stuff. */
 		setcfmlFunctions( new cfmlFunctions() );
 		/* Set object to handle HTTP response stuff. */
@@ -37,6 +51,9 @@ component
 		if ( structKeyExists(arguments,'AuthorizationMethod') ) {
 			setAuthorizationMethod( arguments.AuthorizationMethod );
 		}
+		if ( structKeyExists(arguments,'BasicAuthCheckMethod') ) {
+			setBasicAuthCheckMethod( arguments.BasicAuthCheckMethod );
+		}
 		if ( structKeyExists(arguments,'OnErrorMethod') ) {
 			setOnErrorMethod( arguments.OnErrorMethod );
 		}
@@ -48,6 +65,23 @@ component
 		configureResources( arguments.Config );
 		/* Always return the object. */
 		return this;
+	}
+	
+	/**
+	* @hint "I apply the BasicAuthCheckMethod if it exists."
+	**/
+	private boolean function basicAuthCredentialsPass( required struct ResourceInfo ) {
+		var credentials = variables.HTTPUtil.getBasicAuthCredentials();
+		var checkCredentials = getBasicAuthCheckMethod();
+		if ( IsNull(credentials) ) {
+			/* No credentials supplied. */
+			var credentials = {
+				"specified" = false
+				,"user" = ""
+				,"password" = ""
+			};
+		}
+		return checkCredentials( credentials, ResourceInfo );
 	}
 	
 	/**
@@ -100,15 +134,15 @@ component
 			/* Provide appropriate error responses. */
 			switch(result.Error) {
 				case "NotAuthorized": {
-					var response = {
+					result["Response"] = {
 						"status" = 403,
 						"statusText" = 'Forbidden',
-						"responseText" = 'The user does not have access to this resource'
+						"responseText" = result.ErrorMessage
 					};
 					break;
 				}
 				case "ResourceNotFound": {
-					var response = {
+					result["Response"] = {
 						"status" = 404,
 						"statusText" = 'Not Found',
 						"responseText" = result.ErrorMessage
@@ -117,7 +151,7 @@ component
 				}
 				case "VerbNotFound": {
 					variables.HTTPUtil.setResponseHeader('Allow', result.AllowedVerbs);
-					var response = {
+					result["Response"] = {
 						"status" = 405,
 						"statusText" = 'Method Not Allowed',
 						"responseText" = result.ErrorMessage
@@ -125,7 +159,7 @@ component
 					break;
 				}
 				default: {
-					var response = {
+					result["Response"] = {
 						"status" = 500,
 						"statusText" = 'Unknown Error Type',
 						"responseText" = result.ErrorMessage
@@ -136,8 +170,8 @@ component
 			/* Tell the client we are sending JSON. */
 			variables.HTTPUtil.setResponseContentType('application/json');
 			/* Output the response */
-			variables.HTTPUtil.setResponseStatus(response.status, response.statusText);
-			writeOutput( SerializeJSON(response) );
+			variables.HTTPUtil.setResponseStatus(result.Response.status, result.Response.statusText);
+			writeOutput( SerializeJSON(result.Response) );
 		}
 		result["Rendered"] = true;
 		return result;
@@ -188,18 +222,24 @@ component
 			/* They just wanted to know which verbs are supported. We're done. */
 			return result;	
 		}
-		if ( !isNull(getAuthorizationMethod()) ) {
+		var authArg = {
+			"Bean" = resource.Bean,
+			"Method" = resource.Method,
+			"Path" = resource.Path,
+			"Pattern" = resource.Pattern,
+			"Verb" = resource.Verb
+		};
+		if ( !IsNull(getBasicAuthCheckMethod()) ) {
+			if ( !basicAuthCredentialsPass( authArg ) ) {
+				variables.HTTPUtil.promptForBasicAuth( "REST API" );
+			}
+		}
+		if ( !IsNull(getAuthorizationMethod()) ) {
 			var authorize = getAuthorizationMethod();
-			var authArg = {
-				"Bean" = resource.Bean,
-				"Method" = resource.Method,
-				"Path" = resource.Path,
-				"Pattern" = resource.Pattern,
-				"Verb" = resource.Verb
-			};
 			if ( !authorize(authArg) ) {
 				result.Success = false;
 				result.Error = "NotAuthorized";
+				result.ErrorMessage = "The user does not have access to this resource";
 				return result;
 			}
 		}
@@ -232,6 +272,11 @@ component
 			} else {
 				result.Output = SerializeJSON(methodResult);
 			}
+			if ( arguments.Verb == "GET" && resource.JSONP.enabled && StructKeyExists(arguments.URLScope, resource.JSONP.callbackParameter) ) {
+				/* Add JSONP "padding". */
+				var jsonpMethod = arguments.URLScope[resource.JSONP.callbackParameter];
+				result.Output = jsonpMethod & "(" & result.Output & ")";
+			}
 		} else {
 			result.Output = "";
 		}
@@ -253,13 +298,23 @@ component
 		} else if ( StructKeyExists(arguments.Config,"Patterns") ) {
 			var Patterns = arguments.Config.Patterns; 
 		}
+		/* Apply defaults to top level config. */
+		if ( !StructKeyExists(arguments.Config, "Arguments") ) {
+			arguments.Config["Arguments"] = {};
+		}
+		if ( !StructKeyExists(arguments.Config, "JSONP") ) {
+			arguments.Config["JSONP"] = {};
+		}
 		if ( !StructKeyExists(arguments.Config, "WrapSimpleValues") ) {
 			arguments.Config["WrapSimpleValues"] = {};
 		}
+		StructAppend(arguments.Config.Arguments, variables.Defaults.Arguments, false);
+		StructAppend(arguments.Config.Arguments.MergeScopes, variables.Defaults.Arguments.MergeScopes, false);
+		StructAppend(arguments.Config.JSONP, variables.Defaults.JSONP, false);
 		StructAppend(arguments.Config.WrapSimpleValues, variables.Defaults.WrapSimpleValues, false);
-		variables.Config.Resources = [];
 		/* By sorting the keys this way, static patterns should take priority over dynamic ones. */
 		var keyList = ListSort(StructKeyList(Patterns), 'textnocase', 'asc');
+		variables.Config.Resources = [];
 		for ( var key in ListToArray(keyList) ) {
 			var resource = Patterns[key];
 			/* Build "AllowedVerbs" for "Allow" header. */
@@ -277,8 +332,25 @@ component
 			var httpRequestMethods = variables.HTTPUtil.getPossibleRequestMethods();
 			for ( var resourceKey in resource ) {
 				if ( ArrayFindNoCase(httpRequestMethods, resourceKey) ) {
+					if ( !StructKeyExists(resource[resourceKey], "Arguments") ) {
+						resource[resourceKey]["Arguments"] = {};
+					}
+					if ( !StructKeyExists(resource[resourceKey], "JSONP") ) {
+						resource[resourceKey]["JSONP"] = {};
+					}
 					if ( !StructKeyExists(resource[resourceKey], "WrapSimpleValues") ) {
 						resource[resourceKey]["WrapSimpleValues"] = {};
+					}
+					StructAppend(resource[resourceKey].Arguments, arguments.Config.Arguments, false);
+					StructAppend(resource[resourceKey].Arguments.MergeScopes, arguments.Config.Arguments.MergeScopes, false);
+					if ( StructKeyExists(resource[resourceKey], "DefaultArguments") && IsStruct(resource[resourceKey].DefaultArguments) ) {
+						/* Remap legacy config to new position. */
+						resource[resourceKey].Arguments["Defaults"] = resource[resourceKey].DefaultArguments;
+					}
+					StructAppend(resource[resourceKey].JSONP, arguments.Config.JSONP, false);
+					if ( !resource[resourceKey].JSONP.enabled ) {
+						/* Remove callbackParameter if JSONP disabled. */
+						StructDelete(resource[resourceKey].JSONP, "callbackParameter");
 					}
 					StructAppend(resource[resourceKey].WrapSimpleValues, arguments.Config.WrapSimpleValues, false);
 				}
@@ -336,7 +408,7 @@ component
 	**/
 	private struct function gatherRequestArguments( required struct ResourceMatch, string RequestBody = "", struct URLScope = {}, struct FormScope = {} ) {
 		/* Grab the DefaultArguments if they exist. */
-		var DefaultArgs = isNull(arguments.ResourceMatch.DefaultArguments) ? {} : arguments.ResourceMatch.DefaultArguments;
+		var DefaultArgs = isNull(arguments.ResourceMatch.Arguments.Defaults) ? {} : arguments.ResourceMatch.Arguments.Defaults;
 		/* Get the arguments from the URIs (e.g. /product/321 to ProductID=321) */
 		var PathValues = {};
 		if ( ReFindNoCase("[{}]", ResourceMatch.Pattern) ) {
@@ -356,7 +428,6 @@ component
 			Payload = DeserializeJSON(trim(arguments.RequestBody));
 		}
 		var args = {
-			"Payload" = Payload,
 			"ArgumentSources" = {
 				"DefaultArguments" = DefaultArgs,
 				"FormScope" = arguments.FormScope,
@@ -365,13 +436,21 @@ component
 				"URLScope" = arguments.URLScope
 			}
 		};
-		/* Coalesce all the sources together. User "overwrite" false and put the highest priority first.  */
-		StructAppend(args, PathValues, false);	/* Path 1st */
-		if ( isStruct(Payload) ) {
+		/* Insert payload with specified (or default) argument name. */
+		args[arguments.ResourceMatch.Arguments.PayloadArgument] = Payload;
+		/* Coalesce all the sources together. Use "overwrite" false and put the highest priority first.  */
+		if ( arguments.ResourceMatch.Arguments.MergeScopes.Path ) {
+			StructAppend(args, PathValues, false);	/* Path 1st */
+		}
+		if ( isStruct(Payload) && arguments.ResourceMatch.Arguments.MergeScopes.Payload ) {
 			StructAppend(args, Payload, false);	/* Body 2nd */
 		}
-		StructAppend(args, URLScope, false);	/* URL 3rd */
-		StructAppend(args, FormScope, false);	/* Form 4th */
+		if ( arguments.ResourceMatch.Arguments.MergeScopes.URL ) {
+			StructAppend(args, URLScope, false);	/* URL 3rd */
+		}
+		if ( arguments.ResourceMatch.Arguments.MergeScopes.Form ) {
+			StructAppend(args, FormScope, false);	/* Form 4th */
+		}
 		StructAppend(args, DefaultArgs, false);	/* DefaultArguments 5th */
 		return args;
 	}

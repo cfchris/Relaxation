@@ -21,6 +21,181 @@ component extends="mxunit.framework.TestCase" {
 	 **/
 	
 	/**
+	* @hint "I test that argument config defaults work."
+	**/
+	public void function argument_config_defaults_should_work() {
+		var testConfig = '{
+			"RequestPatterns": {
+				"/product/{ProductID}/": {
+					"PUT": {
+						"Bean": "ProductService"
+						,"Method": "updateProduct"
+					}
+				}
+			}
+		}';
+		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testConfig);
+		var config = relaxationInstance.getConfig();
+		
+		AssertIsStruct(config.Resources[1].PUT.Arguments);
+		AssertEquals('Payload', config.Resources[1].PUT.Arguments.PayloadArgument);
+		AssertTrue(config.Resources[1].PUT.Arguments.MergeScopes.Path);
+		AssertTrue(config.Resources[1].PUT.Arguments.MergeScopes.Payload);
+		AssertTrue(config.Resources[1].PUT.Arguments.MergeScopes.URL);
+		AssertTrue(config.Resources[1].PUT.Arguments.MergeScopes.Form);
+	}
+	
+	/**
+	* @hint "I test that argument config defaults work."
+	**/
+	public void function argument_config_top_level_should_work() {
+		var testConfig = '{
+			"Arguments": {
+				"PayloadArgument": "TestPayloadArg"
+				,"MergeScopes": {
+					"Path": false
+					,"Payload": false
+					,"URL": false
+					,"Form": false
+				}
+			}
+			,"RequestPatterns": {
+				"/product/{ProductID}/": {
+					"PUT": {
+						"Bean": "ProductService"
+						,"Method": "updateProduct"
+					}
+				}
+			}
+		}';
+		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testConfig);
+		var config = relaxationInstance.getConfig();
+		
+		AssertIsStruct(config.Resources[1].PUT.Arguments);
+		AssertEquals('TestPayloadArg', config.Resources[1].PUT.Arguments.PayloadArgument);
+		AssertFalse(config.Resources[1].PUT.Arguments.MergeScopes.Path);
+		AssertFalse(config.Resources[1].PUT.Arguments.MergeScopes.Payload);
+		AssertFalse(config.Resources[1].PUT.Arguments.MergeScopes.URL);
+		AssertFalse(config.Resources[1].PUT.Arguments.MergeScopes.Form);
+	}
+	
+	/**
+	* @hint "I test that argument config defaults work."
+	**/
+	public void function argument_config_verb_level_should_work() {
+		var testConfig = '{
+			"Arguments": {
+				"PayloadArgument": "TestPayloadArg"
+				,"MergeScopes": {
+					"Path": true
+					,"Payload": true
+					,"URL": true
+				}
+			}
+			,"RequestPatterns": {
+				"/product/{ProductID}/": {
+					"PUT": {
+						"Bean": "ProductService"
+						,"Method": "updateProduct"
+						,"Arguments": {
+							"PayloadArgument": "Product"
+							,"MergeScopes": {
+								"Payload": false
+							}
+						}
+					}
+				}
+			}
+		}';
+		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testConfig);
+		var config = relaxationInstance.getConfig();
+		
+		AssertIsStruct(config.Resources[1].PUT.Arguments);
+		AssertEquals('Product', config.Resources[1].PUT.Arguments.PayloadArgument);
+		AssertTrue(config.Resources[1].PUT.Arguments.MergeScopes.Path);
+		AssertFalse(config.Resources[1].PUT.Arguments.MergeScopes.Payload);
+		AssertTrue(config.Resources[1].PUT.Arguments.MergeScopes.URL);
+		AssertTrue(config.Resources[1].PUT.Arguments.MergeScopes.Form);
+	}
+	
+	/**
+	* @hint "I test that the payload argument is used to build arguments."
+	**/
+	public void function argument_merge_config_works_when_building_arguments() {
+		var testConfig = '{
+			"RequestPatterns": {
+				"/widget/{WidgetID}/something": {
+					"POST": {
+						"Bean": "WidgetService"
+						,"Method": "addSomething"
+						,"Arguments": {
+							"MergeScopes": {
+								"Path": true
+								,"Payload": true
+								,"URL": true
+								,"Form": true
+							}
+						}
+					}
+				}
+				,"/product": {
+					"POST": {
+						"Bean": "ProductService"
+						,"Method": "addProduct"
+						,"Arguments": {
+							"MergeScopes": {
+								"Path": false
+								,"Payload": false
+								,"URL": false
+								,"Form": false
+							}
+						}
+					}
+				}
+				,"/product/{ProductID}/": {
+					"GET": {
+						"Bean": "ProductService"
+						,"Method": "getProductByID"
+					}
+					,"PUT": {
+						"Bean": "ProductService"
+						,"Method": "updateProduct"
+						,"Arguments": {
+							"MergeScopes": {
+								"Payload": false
+							}
+						}
+					}
+				}
+			}
+		}';
+		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testConfig);
+		var config = relaxationInstance.getConfig();
+		
+		/* Make method for finding the correct config and building args public. */
+		makePublic(relaxationInstance,"findResourceConfig");
+		makePublic(relaxationInstance,"gatherRequestArguments");
+		
+		/* Test widget POST arg merging. */
+		var Match = relaxationInstance.findResourceConfig("/widget/999/something","POST");
+		var args = relaxationInstance.gatherRequestArguments(ResourceMatch = Match, RequestBody = '{"isActive":true, "color":"red"}', URLScope = {"urlArg":1}, FormScope = {"formArg":2} );
+		AssertIsStruct(args);
+		AssertTrue(StructKeyExists(args,"WidgetID"), 'Missing "WidgetID" path key in args.');
+		AssertTrue(StructKeyExists(args,"isActive"), 'Missing "isActive" payload key in args.');
+		AssertTrue(StructKeyExists(args,"urlArg"), 'Missing "urlArg" URL key in args.');
+		AssertTrue(StructKeyExists(args,"formArg"), 'Missing "formArg" FORM key in args.');
+		
+		/* Test product POST arg merging. */
+		var Match = relaxationInstance.findResourceConfig("/product","POST");
+		var args = relaxationInstance.gatherRequestArguments(ResourceMatch = Match, RequestBody = '{"isActive":true, "color":"red"}', URLScope = {"urlArg":1}, FormScope = {"formArg":2} );
+		AssertIsStruct(args);
+		/* The config for this resource+verb is to NOT merge any scopes. */
+		AssertEquals(2, ListLen(StructKeyList(args)));
+		AssertTrue(ListFindNoCase(StructKeyList(args),"ArgumentSources"));
+		AssertTrue(ListFindNoCase(StructKeyList(args),"Payload"));
+	}
+	
+	/**
 	* @hint "I test that the Authorization hook works."
 	**/
 	public void function authorization_hook_should_work() {
@@ -42,6 +217,34 @@ component extends="mxunit.framework.TestCase" {
 	}
 	
 	/**
+	* @hint "I test the BasicAuthCheckMethod."
+	**/
+	public void function basic_auth_hook_should_work() {
+		/* Mock httpUtil methods needed for this scenario. */
+		var httpUtil = mock();
+		httpUtil.promptForBasicAuth("{string}").returns();
+		httpUtil.getBasicAuthCredentials().returns();
+		variables.RestFramework.setHTTPUtil( httpUtil );
+		
+		/* Test first with NO auth method. */
+		var result = variables.RestFramework.processRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
+		
+		/* Test with an auth method that WILL authenticate. */
+		variables.RestFramework.setBasicAuthCheckMethod( returnTrue );
+		var result = variables.RestFramework.processRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
+		
+		/* Test with an auth method that WON'T authenticate. */
+		variables.RestFramework.setBasicAuthCheckMethod( returnFalse );
+		var result = variables.RestFramework.processRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
+		
+		/* Test that having method set triggers call to httputil.getBasicAuthCredentials(). */
+		httpUtil.verifyTimes(2).getBasicAuthCredentials();
+		
+		/* Test that processing two requests only calls promptForBasicAuth once (for the time where the mock returned false). */
+		httpUtil.verifyTimes(1).promptForBasicAuth("{string}");
+	}
+	
+	/**
 	* @hint "I test all of the different styles of Config args."
 	**/
 	public void function different_config_types_should_work() {
@@ -51,7 +254,6 @@ component extends="mxunit.framework.TestCase" {
 		assertIsStruct(config);
 		assertIsStruct(config.RequestPatterns);
 		assertTrue(structKeyExists(config.RequestPatterns,"/product"),"The (/product) resource was not defined in the config.");
-		//debug(config);
 		/* Test with the expanded path. */
 		var config = variables.RestFramework.translateConfig( expandPath(variables.ConfigPath) );
 		assertIsStruct(config);
@@ -86,7 +288,6 @@ component extends="mxunit.framework.TestCase" {
 		makePublic(variables.RestFramework,"findResourceConfig");
 		/* Test static URL. */
 		var match = variables.RestFramework.findResourceConfig( "/product/colors", "GET" );
-		//debug(match);
 		assertIsStruct(match);
 		assertEquals(true, match.located);
 		assertEquals("ProductService", match.Bean);
@@ -94,7 +295,6 @@ component extends="mxunit.framework.TestCase" {
 		assertEquals("GET,OPTIONS", match.AllowedVerbs);
 		/* Test dynamic URL. */
 		var match = variables.RestFramework.findResourceConfig( "/product/1", "GET" );
-		//debug(match);
 		assertIsStruct(match);
 		assertEquals(true, match.located);
 		assertEquals("ProductService", match.Bean);
@@ -102,7 +302,6 @@ component extends="mxunit.framework.TestCase" {
 		assertEquals("GET,OPTIONS,POST", match.AllowedVerbs);
 		/* Test deeper dynamic URL. */
 		var match = variables.RestFramework.findResourceConfig( "/product/1/colors", "GET" );
-		//debug(match);
 		assertIsStruct(match);
 		assertEquals(true, match.located);
 		assertEquals("ProductService", match.Bean);
@@ -140,7 +339,6 @@ component extends="mxunit.framework.TestCase" {
 		var RequestBodyValues = DeserializeJSON(RequestBody);
 		var Match = variables.RestFramework.findResourceConfig("/product/321/colors/red/priority/from-uri","POST");
 		var args = variables.RestFramework.gatherRequestArguments(ResourceMatch = Match, RequestBody = RequestBody, URLScope = URLScope, FormScope = FormScope );
-		//debug(args);
 		assertIsStruct(args);
 		assertIsStruct(args.ArgumentSources);
 		assertIsStruct(args.ArgumentSources.URLScope);
@@ -160,12 +358,16 @@ component extends="mxunit.framework.TestCase" {
 		assertEquals("red", args.Color);
 		assertEquals(FormScope.FormTestArg, args.FormTestArg);
 		
-		/* Run a request that has "DefaultArguments" configured. */
+		/* LEGACY: Run a request that has "DefaultArguments" configured. */
 		var Match = variables.RestFramework.findResourceConfig("/product/all-active","GET");
 		var args = variables.RestFramework.gatherRequestArguments(ResourceMatch = Match, RequestBody = "", URLScope = {}, FormScope = {} );
-		//debug(args);
 		assertEquals(1, args.Active);
 		assertEquals('Available', args.Status);
+		
+		/* Run a request that has "Arguments.Defaults" configured. */
+		var Match = variables.RestFramework.findResourceConfig("/product/inactive","GET");
+		var args = variables.RestFramework.gatherRequestArguments(ResourceMatch = Match, RequestBody = "", URLScope = {}, FormScope = {} );
+		assertEquals(0, args.Active);
 	}
 	
 	/**
@@ -181,10 +383,192 @@ component extends="mxunit.framework.TestCase" {
 		assertEquals(true, result.Rendered);
 		/* Test bad response */
 		result = variables.RestFramework.handleRequest( Path = "/product/this/will/never/work", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
-		//debug(result);
 		assertIsStruct(result);
 		assertEquals(false, result.Success);
 		assertEquals(true, result.Rendered);
+	}
+	
+	/**
+	* @hint "I test that the JSONP callback is applied when specified."
+	**/
+	public void function jsonp_config_is_applied_when_appropriate() {
+		var testConfig = '{
+			"JSONP": {
+				"enabled": true
+			}
+			,"RequestPatterns": {
+				"/product/": {
+					"GET": {
+						"Bean": "ProductService",
+						"Method": "getAllProducts"
+					}
+				}
+			}
+		}';
+		var instance = new Relaxation.Relaxation.Relaxation(testConfig);
+		instance.setBeanFactory( getBeanFactory() );
+		instance.setHttpUtil( getHttpUtil() );
+		
+		/* Test a call without asking for JSONP. */
+		var jsonResult = instance.processRequest( 
+			Path = '/product/',
+			Verb = 'GET',
+			RequestBody = '', URLScope = {}, FormScope = {}
+		);
+		AssertTrue( isJSON(jsonResult.Output) );
+		
+		/* Test a call requesting JSONP. */
+		var jsonResult = instance.processRequest(
+			Path = '/product/',
+			Verb = 'GET',
+			RequestBody = '', URLScope = {"jsonp"="myJSFunction"}, FormScope = {}
+		);
+		AssertTrue( ReFindNoCase("^myJSFunction\(", jsonResult.Output) );
+	}
+	
+	/**
+	* @hint "I test that jsonp default configuration is applied appropriately."
+	**/
+	public void function jsonp_default_config_is_applied_correctly() {
+		var testConfig = '{
+			"RequestPatterns": {
+				"/product/": {
+					"GET": {
+						"Bean": "ProductService",
+						"Method": "getAllProducts"
+					}
+				}
+			}
+		}';
+		var instance = new Relaxation.Relaxation.Relaxation(testConfig);
+		var config = instance.getConfig();
+		
+		assertFalse(config.Resources[1].GET.JSONP.enabled);
+		assertFalse(StructKeyExists(config.Resources[1].GET.JSONP, "callbackParameter"), "callbackParameter key should not exist when the setting is not enabled.");
+	}
+	
+	/**
+	* @hint "I test that jsonp manual configuration is applied appropriately."
+	**/
+	public void function jsonp_manual_config_is_applied_correctly() {
+		/* Example config with param specified at the top and overwritten for resources. */
+		var testConfig = '{
+			"JSONP": {
+				"enabled": false
+				,"callbackParameter": "topLevelCB"
+			}
+			,"RequestPatterns": {
+				"/product/": {
+					"GET": {
+						"Bean": "ProductService"
+						,"Method": "getAllProducts"
+					}
+				}
+				,"/product/{ProductID}/": {
+					"GET": {
+						"Bean": "ProductService"
+						,"Method": "getProductByID"
+						,"JSONP": {
+							"enabled": true
+						}
+					}
+				}
+				,"/product/type": {
+					"GET": {
+						"Bean": "ProductService"
+						,"Method": "getProductTypes"
+						,"JSONP": {
+							"enabled": true
+							,"callbackParameter": "getLevelCB"
+						}
+					}
+				}
+			}
+		}';
+		var instance = new Relaxation.Relaxation.Relaxation(testConfig);
+		MakePublic(instance, "findResourceConfig", "findResourceConfig");
+		
+		var config = instance.findResourceConfig( '/product/', 'GET' );
+		assertFalse(config.JSONP.enabled);
+		assertFalse(StructKeyExists(config.JSONP, "callbackParameter"), "callbackParameter key should not exist when the setting is not enabled.");
+		
+		var config = instance.findResourceConfig( '/product/123', 'GET' );
+		assertTrue(config.JSONP.enabled);
+		assertEquals('topLevelCB', config.JSONP.callbackParameter);
+		
+		var config = instance.findResourceConfig( '/product/type/', 'GET' );
+		assertTrue(config.JSONP.enabled);
+		assertEquals('getLevelCB', config.JSONP.callbackParameter);
+	}
+	
+	/**
+	* @hint "I test that the payload argument is used to build arguments."
+	**/
+	public void function payload_argument_is_applied_when_building_arguments() {
+		var testConfig = '{
+			"RequestPatterns": {
+				"/widget": {
+					"POST": {
+						"Bean": "WidgetService"
+						,"Method": "addWidget"
+					}
+				}
+				,"/product": {
+					"POST": {
+						"Bean": "ProductService"
+						,"Method": "addProduct"
+						,"Arguments": {
+							"PayloadArgument": "NewProduct"
+						}
+					}
+				}
+				,"/product/{ProductID}/": {
+					"GET": {
+						"Bean": "ProductService"
+						,"Method": "getProductByID"
+					}
+					,"PUT": {
+						"Bean": "ProductService"
+						,"Method": "updateProduct"
+						,"Arguments": {
+							"PayloadArgument": "ExistingProduct"
+						}
+					}
+				}
+			}
+		}';
+		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testConfig);
+		var config = relaxationInstance.getConfig();
+		
+		/* Make method for finding the correct config and building args public. */
+		makePublic(relaxationInstance,"findResourceConfig");
+		makePublic(relaxationInstance,"gatherRequestArguments");
+		
+		/* Test widget POST arg mapping. */
+		var Match = relaxationInstance.findResourceConfig("/widget","POST");
+		var args = relaxationInstance.gatherRequestArguments(ResourceMatch = Match, RequestBody = '{"isActive":true, "color":"red"}', URLScope = {}, FormScope = {} );
+		AssertIsStruct(args);
+		AssertTrue(StructKeyExists(args,"Payload"), "Could not find expected arg key.");
+		AssertIsStruct(args.Payload);
+		AssertEquals("red", args.Payload.color);
+		
+		/* Test product POST arg mapping. */
+		var Match = relaxationInstance.findResourceConfig("/product","POST");
+		var args = relaxationInstance.gatherRequestArguments(ResourceMatch = Match, RequestBody = '{"isActive":true, "color":"red"}', URLScope = {}, FormScope = {} );
+		AssertIsStruct(args);
+		AssertFalse(StructKeyExists(args,"Payload"), "Payload key found. It should not be there.");
+		AssertTrue(StructKeyExists(args,"NewProduct"), "Could not find expected arg key.");
+		AssertIsStruct(args.NewProduct);
+		AssertEquals("red", args.NewProduct.color);
+		
+		/* Test product item PUT arg mapping. */
+		var Match = relaxationInstance.findResourceConfig("/product/123","PUT");
+		var args = relaxationInstance.gatherRequestArguments(ResourceMatch = Match, RequestBody = '{"isActive":true, "color":"red"}', URLScope = {}, FormScope = {} );
+		AssertIsStruct(args);
+		AssertFalse(StructKeyExists(args,"Payload"), "Payload key found. It should not be there.");
+		AssertTrue(StructKeyExists(args,"ExistingProduct"), "Could not find expected arg key.");
+		AssertIsStruct(args.ExistingProduct);
+		AssertEquals("red", args.ExistingProduct.color);
 	}
 	
 	/**
@@ -199,7 +583,6 @@ component extends="mxunit.framework.TestCase" {
 		assertTrue(FindNoCase("Hot Sauce!",result.Output),"Part of the JSON string that should be there IS NOT.");
 		/* Test empty response */
 		result = variables.RestFramework.processRequest( Path = "/product/do/nothing", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
-		//debug(result);
 		assertIsStruct(result);
 		assertTrue(!StructIsEmpty(result), "Shoot. The return struct is empty.");
 		assertEquals(true, result.Success);
@@ -222,6 +605,28 @@ component extends="mxunit.framework.TestCase" {
 	}
 	
 	/**
+	* @hint "I test that throwing specific errorcodes are mapped to specific http status codes."
+	**/
+	public void function thrown_errors_should_map_correctly() {
+		var httpUtil = getHttpUtil();
+		variables.RestFramework.setHTTPUtil( httpUtil );
+		
+		/* Mock a known request state to test status code mapping. */
+		InjectMethod( variables.RestFramework, this, 'return403Result', 'processRequest' );
+		/* Call handleRequest. */
+		var result = variables.RestFramework.handleRequest( '/na' );
+		httpUtil.verify().setResponseStatus(403, 'Forbidden');
+		AssertEquals(return403Result().ErrorMessage, result.response.responseText);
+		
+		/* Mock a known request state to test status code mapping. */
+		InjectMethod( variables.RestFramework, this, 'return404Result', 'processRequest' );
+		/* Call handleRequest. */
+		var result2 = variables.RestFramework.handleRequest( '/na' );
+		httpUtil.verify().setResponseStatus(404, 'Not Found');
+		AssertEquals(return404Result().ErrorMessage, result2.response.responseText);
+	}
+	
+	/**
 	 * @hint I test that the WrapSimpleValues portion of the configuration works properly
 	 **/
 	public void function wrap_simple_values_config_should_work() {
@@ -231,7 +636,7 @@ component extends="mxunit.framework.TestCase" {
 				"objectProperty": "requestResult"
 			},
 			"RequestPatterns": {
-				"/customer/{ProductID}/": {
+				"/product/{ProductID}/": {
 					"GET": {
 						"Bean": "ProductService",
 						"Method": "getProductByID",
@@ -240,8 +645,8 @@ component extends="mxunit.framework.TestCase" {
 						}
 					},
 					"PUT": {
-						"Bean": "CustomerService",
-						"Method": "updateCustomer",
+						"Bean": "ProductService",
+						"Method": "updateProduct",
 						"WrapSimpleValues": {
 							"objectProperty": "id"
 						}
@@ -265,7 +670,7 @@ component extends="mxunit.framework.TestCase" {
 	public void function wrap_simple_values_default_config_should_work() {
 		var testConfig = '{
 			"RequestPatterns": {
-				"/customer/{ProductID}/": {
+				"/product/{ProductID}/": {
 					"GET": {
 						"Bean": "ProductService",
 						"Method": "getProductByID",
@@ -274,8 +679,8 @@ component extends="mxunit.framework.TestCase" {
 						}
 					},
 					"PUT": {
-						"Bean": "CustomerService",
-						"Method": "updateCustomer",
+						"Bean": "ProductService",
+						"Method": "updateProduct",
 						"WrapSimpleValues": {
 							"objectProperty": "id"
 						}
@@ -314,7 +719,7 @@ component extends="mxunit.framework.TestCase" {
 						}
 					},
 					"PUT": {
-						"Bean": "CustomerService",
+						"Bean": "ProductService",
 						"Method": "saveProduct",
 						"WrapSimpleValues": {
 							"objectProperty": "id"
@@ -367,7 +772,7 @@ component extends="mxunit.framework.TestCase" {
 						}
 					},
 					"PUT": {
-						"Bean": "CustomerService",
+						"Bean": "ProductService",
 						"Method": "saveProduct",
 						"WrapSimpleValues": {
 							"objectProperty": "id"
@@ -423,10 +828,52 @@ component extends="mxunit.framework.TestCase" {
 	}
 	
 	/**
+	* @hint "I return a mock httpUtil for testing."
+	**/
+	private any function getHttpUtil() {
+		var httpUtil = mock();
+		httpUtil.setResponseHeader('{string}', '{string}').returns();
+		httpUtil.setResponseContentType('{string}').returns();
+		httpUtil.setResponseStatus(403, 'Forbidden').returns();
+		httpUtil.setResponseStatus(404, 'Not Found').returns();
+		return httpUtil;
+	}
+	
+	/**
 	* @hint "I get the test Rest Framework config"
 	**/
 	private struct function getFrameworkConfig() {
 		return DeserializeJSON(fileRead(expandPath(variables.ConfigPath)));
+	}
+	
+	/**
+	* @hint "I return a result that should trigger a 403."
+	**/
+	private struct function return403Result() {
+		var result = {
+			"Success" = false
+			,"Output" = ""
+			,"Error" = "NotAuthorized"
+			,"ErrorMessage" = "You can't touch this!"
+			,"AllowedVerbs" = ""
+			,"CacheHeaderSeconds" = ""
+		};
+		return result;
+	}
+	
+	/**
+	* @hint "I return a result that should trigger a 404."
+	**/
+	private struct function return404Result() {
+		var result = {
+			"Success" = false
+			,"Output" = ""
+			,"Error" = "ResourceNotFound"
+			,"ErrorMessage" = "Where's the beef!"
+			,"AllowedVerbs" = ""
+			,"CacheHeaderSeconds" = ""
+		};
+		return result;
 	}
 	
 	/**

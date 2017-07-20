@@ -1,5 +1,8 @@
 {
-	"RequestPatterns": {
+	"JSONP": {
+		"enabled": true
+	}
+	,"RequestPatterns": {
 		"/product": {
 			"GET": {
 				"Bean": "ProductService"

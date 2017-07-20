@@ -12,7 +12,11 @@ component output="false" {
 			var Relaxation = new Relaxation.Relaxation.Relaxation( "/Relaxation/Examples/Basic/RestConfig.json.cfm" );
 			Relaxation.setBeanFactory( application.BeanFactory );
 			Relaxation.setOnErrorMethod( handleError );
-			Relaxation.setAuthorizationMethod( handleAuth );
+			/*
+			 * Setting the Basic Auth Check Method will enable Basic Auth requirement.
+			 * If method returns false, Relaxation will promt http client for basic auth credentials.
+			 */
+			Relaxation.setBasicAuthCheckMethod( handleBasicAuth );
 			application.REST = Relaxation;
 			return true;
 		}
@@ -34,12 +38,23 @@ component output="false" {
 	* @hint "I handle requests. (Route requests using Relaxation.)"
 	**/
 	public void function onRequest() {
-		var auth = application.REST.getHTTPUtil().getBasicAuthCredentials();
-		if ( IsNull(auth) || !(auth.user == "Maxin" && auth.password == "Relaxin") ) {
-			application.REST.getHTTPUtil().promptForBasicAuth( "API Demo" );
-		} else {
-			application.REST.handleRequest();
+		application.REST.handleRequest();
+	}
+	
+	/**
+	* @hint "I handle checking basic auth creds."
+	**/
+	private boolean function handleBasicAuth( required struct Credentials, struct ResourceInfo ) {
+		if ( arguments.ResourceInfo.Pattern == '/product/' && arguments.ResourceInfo.Verb == 'GET' ) {
+			/* GET /product is not secured. */
+			return true;
 		}
+		if ( !arguments.Credentials.Specified ) {
+			/* No basic auth header was provided. */
+			return false;
+		}
+		/* Basic auth provided. Test against credential store. */
+		return application.BeanFactory.getBean("Security").isAuthenticated( arguments.Credentials.User, arguments.Credentials.Password );
 	}
 	
 	/**
@@ -48,10 +63,6 @@ component output="false" {
 	private void function handleError(Any e) {
 		application.BeanFactory.getBean("ErrorLogger").logError( arguments.e );
 		return;
-	}
-	
-	private boolean function handleAuth(resource) {
-		return true;
 	}
 	
 }

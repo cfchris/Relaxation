@@ -6,6 +6,7 @@ component hint="I am the testing Bean Factory" output="false" persistent="false"
 	public component function init() {
 		variables.ProductService = new ProductService();
 		variables.ErrorLogger = new ErrorLogger();
+		variables.Security = new Security();
 		return this;
 	}
 	
