@@ -158,6 +158,14 @@ component
 					};
 					break;
 				}
+				case "ClientError": {
+					result["Response"] = {
+						"status" = 400,
+						"statusText" = 'Bad Request',
+						"responseText" = result.ErrorMessage
+					};
+					break;
+				}
 				default: {
 					result["Response"] = {
 						"status" = 500,
@@ -254,7 +262,7 @@ component
 			result.Success = false;
 			result.ErrorMessage = e.Message;
 			/* Allow called methods to throw special ErrorCodes to get specific HTTP status codes. */
-			if ( ListFindNoCase("NotAuthorized,ResourceNotFound", e.ErrorCode) ) {
+			if ( ListFindNoCase("NotAuthorized,ResourceNotFound,ClientError", e.ErrorCode) ) {
 				result.Error = e.ErrorCode;
 				return result;
 			}
