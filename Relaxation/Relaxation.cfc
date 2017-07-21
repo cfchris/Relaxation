@@ -332,9 +332,9 @@ component
 			arguments.Config["WrapSimpleValues"] = {};
 		}
 		StructAppend(arguments.Config.Arguments, variables.Defaults.Arguments, false);
+		StructAppend(arguments.Config.Arguments.MergeScopes, variables.Defaults.Arguments.MergeScopes, false);
 		StructAppend(arguments.Config.CrossOrigin, variables.Defaults.CrossOrigin, false);
 		StructAppend(arguments.Config.JSONP, variables.Defaults.JSONP, false);
-		StructAppend(arguments.Config.Arguments.MergeScopes, variables.Defaults.Arguments.MergeScopes, false);
 		StructAppend(arguments.Config.WrapSimpleValues, variables.Defaults.WrapSimpleValues, false);
 		/* By sorting the keys this way, static patterns should take priority over dynamic ones. */
 		var keyList = ListSort(StructKeyList(Patterns), 'textnocase', 'asc');
