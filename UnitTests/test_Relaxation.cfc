@@ -613,6 +613,13 @@ component extends="mxunit.framework.TestCase" {
 		variables.RestFramework.setHTTPUtil( httpUtil );
 		
 		/* Mock a known request state to test status code mapping. */
+		InjectMethod( variables.RestFramework, this, 'return400Result', 'processRequest' );
+		/* Call handleRequest. */
+		var result = variables.RestFramework.handleRequest( '/na' );
+		httpUtil.verify().setResponseStatus(400, 'Bad Request');
+		AssertEquals(return400Result().ErrorMessage, result.response.responseText);
+		
+		/* Mock a known request state to test status code mapping. */
 		InjectMethod( variables.RestFramework, this, 'return403Result', 'processRequest' );
 		/* Call handleRequest. */
 		var result = variables.RestFramework.handleRequest( '/na' );
@@ -835,6 +842,7 @@ component extends="mxunit.framework.TestCase" {
 		var httpUtil = mock();
 		httpUtil.setResponseHeader('{string}', '{string}').returns();
 		httpUtil.setResponseContentType('{string}').returns();
+		httpUtil.setResponseStatus(400, 'Bad Request').returns();
 		httpUtil.setResponseStatus(403, 'Forbidden').returns();
 		httpUtil.setResponseStatus(404, 'Not Found').returns();
 		return httpUtil;
@@ -845,6 +853,21 @@ component extends="mxunit.framework.TestCase" {
 	**/
 	private struct function getFrameworkConfig() {
 		return DeserializeJSON(fileRead(expandPath(variables.ConfigPath)));
+	}
+	
+	/**
+	* @hint "I return a result that should trigger a 400."
+	**/
+	private struct function return400Result() {
+		var result = {
+			"Success" = false
+			,"Output" = ""
+			,"Error" = "ClientError"
+			,"ErrorMessage" = "Your request was bad!"
+			,"AllowedVerbs" = ""
+			,"CacheHeaderSeconds" = ""
+		};
+		return result;
 	}
 	
 	/**
