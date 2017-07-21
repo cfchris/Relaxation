@@ -33,7 +33,7 @@ component
 	* @hint "I return the HTTP headers for the current request."
 	**/
 	public struct function getRequestHeaders() {
-		return GetHTTPRequestData().Headers;
+		return GetHTTPRequestData(false).Headers;
 	}
 	
 	/**
