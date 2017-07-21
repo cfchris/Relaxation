@@ -23,6 +23,9 @@ component
 				,"Form" = true
 			}
 		}
+		,"CrossOrigin" = {
+			"enabled" = false
+		}
 		,"JSONP" = {
 			"enabled" = false
 			,"callbackParameter" = "jsonp"
@@ -121,6 +124,14 @@ component
 				variables.HTTPUtil.setResponseHeader('Date', variables.HTTPUtil.formatHTTPDate(httpnow));
 				variables.HTTPUtil.setResponseHeader('Expires', variables.HTTPUtil.formatHTTPDate(httpexpires));
 			}
+			// Find the Origin of the request
+			var headers = variables.HTTPUtil.getRequestHeaders();
+			if ( result.Resource.CrossOrigin.enabled && StructKeyExists( headers, 'Origin') && Len(headers["Origin"]) > 0  ) {
+				variables.HTTPUtil.setResponseHeader('Access-Control-Allow-Credentials', 'true');
+				variables.HTTPUtil.setResponseHeader('Access-Control-Allow-Headers', 'Cookie, Content-Type');
+				variables.HTTPUtil.setResponseHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
+				variables.HTTPUtil.setResponseHeader('Access-Control-Allow-Origin', headers['Origin']);
+			}
 			if ( len(trim(result.Output)) > 0 ) {
 				/* Tell the client we are sending JSON. */
 				variables.HTTPUtil.setResponseContentType('application/json');
@@ -212,8 +223,9 @@ component
 			,"ErrorMessage" = ""
 			,"AllowedVerbs" = ""
 			,"CacheHeaderSeconds" = ""
+			,"Resource" = findResourceConfig( argumentCollection = arguments )
 		};
-		var resource = findResourceConfig( argumentCollection = arguments );
+		var resource = result.Resource;
 		if ( !resource.Located ) {
 			/* We could not locate the configuration for handling this type of request. */
 			result.Success = false;
@@ -310,6 +322,9 @@ component
 		if ( !StructKeyExists(arguments.Config, "Arguments") ) {
 			arguments.Config["Arguments"] = {};
 		}
+		if ( !StructKeyExists(arguments.Config, "CrossOrigin") ) {
+			arguments.Config["CrossOrigin"] = {};
+		}
 		if ( !StructKeyExists(arguments.Config, "JSONP") ) {
 			arguments.Config["JSONP"] = {};
 		}
@@ -317,8 +332,9 @@ component
 			arguments.Config["WrapSimpleValues"] = {};
 		}
 		StructAppend(arguments.Config.Arguments, variables.Defaults.Arguments, false);
-		StructAppend(arguments.Config.Arguments.MergeScopes, variables.Defaults.Arguments.MergeScopes, false);
+		StructAppend(arguments.Config.CrossOrigin, variables.Defaults.CrossOrigin, false);
 		StructAppend(arguments.Config.JSONP, variables.Defaults.JSONP, false);
+		StructAppend(arguments.Config.Arguments.MergeScopes, variables.Defaults.Arguments.MergeScopes, false);
 		StructAppend(arguments.Config.WrapSimpleValues, variables.Defaults.WrapSimpleValues, false);
 		/* By sorting the keys this way, static patterns should take priority over dynamic ones. */
 		var keyList = ListSort(StructKeyList(Patterns), 'textnocase', 'asc');
@@ -343,6 +359,9 @@ component
 					if ( !StructKeyExists(resource[resourceKey], "Arguments") ) {
 						resource[resourceKey]["Arguments"] = {};
 					}
+					if ( !StructKeyExists(resource[resourceKey], "CrossOrigin") ) {
+						resource[resourceKey]["CrossOrigin"] = {};
+					}
 					if ( !StructKeyExists(resource[resourceKey], "JSONP") ) {
 						resource[resourceKey]["JSONP"] = {};
 					}
@@ -351,6 +370,7 @@ component
 					}
 					StructAppend(resource[resourceKey].Arguments, arguments.Config.Arguments, false);
 					StructAppend(resource[resourceKey].Arguments.MergeScopes, arguments.Config.Arguments.MergeScopes, false);
+					StructAppend(resource[resourceKey].CrossOrigin, arguments.Config.CrossOrigin, false);
 					if ( StructKeyExists(resource[resourceKey], "DefaultArguments") && IsStruct(resource[resourceKey].DefaultArguments) ) {
 						/* Remap legacy config to new position. */
 						resource[resourceKey].Arguments["Defaults"] = resource[resourceKey].DefaultArguments;

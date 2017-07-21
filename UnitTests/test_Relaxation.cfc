@@ -245,6 +245,89 @@ component extends="mxunit.framework.TestCase" {
 	}
 	
 	/**
+	* @hint I test that the CrossOrigin portion of the configuration works properly
+	**/
+	public void function crossorigin_config_should_work() {
+		var testConfig = '{
+			"CrossOrigin": {
+				"enabled": true
+			},
+			"RequestPatterns": {
+				"/product/{ProductID}/": {
+					"GET": {
+						"Bean": "ProductService",
+						"Method": "getProductByID",
+						"CrossOrigin": {
+							"enabled": false
+						}
+					},
+					"PUT": {
+						"Bean": "ProductService",
+						"Method": "updateProduct"
+					}
+				}
+			}
+		}';
+		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testConfig);
+		var config = relaxationInstance.getConfig();
+
+		assertFalse(config.Resources[1].GET.CrossOrigin.enabled);
+		assertTrue(config.Resources[1].PUT.CrossOrigin.enabled);
+	}
+	
+	/**
+	* @hint I test that the CrossOrigin framework defaults work properly
+	**/
+	public void function crossorigin_default_config_should_work() {
+		var testConfig = '{
+			"RequestPatterns": {
+				"/product/{ProductID}/": {
+					"GET": {
+						"Bean": "ProductService",
+						"Method": "getProductByID"
+					},
+					"PUT": {
+						"Bean": "ProductService",
+						"Method": "updateProduct",
+						"CrossOrigin": {
+							"enabled": true
+						}
+					}
+				}
+			}
+		}';
+		var relaxationInstance = new Relaxation.Relaxation.Relaxation(testConfig);
+		var config = relaxationInstance.getConfig();
+
+		assertFalse(config.Resources[1].GET.CrossOrigin.enabled);
+		assertTrue(config.Resources[1].PUT.CrossOrigin.enabled);
+	}
+	
+	/**
+	* @hint I test that the CrossOrigin settings affect requests
+	**/
+	public void function crossorigin_config_is_applied() {
+		var testOrigin = "http://foo.bar";
+		var httpUtil = mock();
+		httpUtil.getRequestHeaders().returns({"Origin" = testOrigin});
+		httpUtil.setResponseHeader('Access-Control-Allow-Credentials', 'true').returns();
+		httpUtil.setResponseHeader('Access-Control-Allow-Headers', 'Cookie, Content-Type').returns();
+		httpUtil.setResponseHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS').returns();
+		httpUtil.setResponseHeader('Access-Control-Allow-Origin', testOrigin).returns();
+		variables.RestFramework.setHTTPUtil( httpUtil );
+		
+		/* Mock a known request state to test status code mapping. */
+		InjectMethod( variables.RestFramework, this, 'return200Result', 'processRequest' );
+		/* Call handleRequest. */
+		var result = variables.RestFramework.handleRequest( '/na' );
+		/* Verify access controll headers were set */
+		httpUtil.verify().setResponseHeader('Access-Control-Allow-Credentials', 'true');
+		httpUtil.verify().setResponseHeader('Access-Control-Allow-Headers', 'Cookie, Content-Type');
+		httpUtil.verify().setResponseHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
+		httpUtil.verify().setResponseHeader('Access-Control-Allow-Origin', testOrigin);
+	}
+	
+	/**
 	* @hint "I test all of the different styles of Config args."
 	**/
 	public void function different_config_types_should_work() {
@@ -853,6 +936,26 @@ component extends="mxunit.framework.TestCase" {
 	**/
 	private struct function getFrameworkConfig() {
 		return DeserializeJSON(fileRead(expandPath(variables.ConfigPath)));
+	}
+	
+	/**
+	* @hint "I return a result that should trigger a 200."
+	**/
+	private struct function return200Result() {
+		var result = {
+			"Success" = true
+			,"Output" = ""
+			,"Error" = "ClientError"
+			,"ErrorMessage" = "Your request was bad!"
+			,"AllowedVerbs" = ""
+			,"CacheHeaderSeconds" = ""
+			,"Resource" = {
+				"CrossOrigin" = {
+					"enabled" = true
+				}
+			}
+		};
+		return result;
 	}
 	
 	/**
