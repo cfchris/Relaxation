@@ -74,6 +74,7 @@ component
 	 		"OPTIONS",
 			"GET",
 			"HEAD",
+			"PATCH",
 			"POST",
 			"PUT",
 			"DELETE",

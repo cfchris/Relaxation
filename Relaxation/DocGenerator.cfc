@@ -47,7 +47,7 @@ component
 			"Pattern" = reReplace(arguments.Resource.Pattern, "/$", "")
 			,"Verbs" = []
 		};
-		for ( var verb in ListToArray('GET,PUT,POST,DELETE') ) {
+		for ( var verb in ListToArray('GET,PATCH,PUT,POST,DELETE') ) {
 			if ( StructKeyExists(arguments.Resource, verb) ) {
 				var verbStruct = arguments.Resource[verb];
 				var defaults = StructKeyExists(verbStruct, 'DefaultArguments') ? verbStruct.DefaultArguments : {};
