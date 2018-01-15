@@ -970,6 +970,12 @@ component extends="mxunit.framework.TestCase" {
 			,"AllowedVerbs" = ""
 			,"CacheHeaderSeconds" = ""
 		};
+		result["Resource"] = {
+			"Located" = true
+			,"SerializeValues" = {
+				"enabled" = true
+			}
+		};
 		return result;
 	}
 	
@@ -985,6 +991,12 @@ component extends="mxunit.framework.TestCase" {
 			,"AllowedVerbs" = ""
 			,"CacheHeaderSeconds" = ""
 		};
+		result["Resource"] = {
+			"Located" = true
+			,"SerializeValues" = {
+				"enabled" = true
+			}
+		};
 		return result;
 	}
 	
@@ -999,6 +1011,12 @@ component extends="mxunit.framework.TestCase" {
 			,"ErrorMessage" = "Where's the beef!"
 			,"AllowedVerbs" = ""
 			,"CacheHeaderSeconds" = ""
+		};
+		result["Resource"] = {
+			"Located" = true
+			,"SerializeValues" = {
+				"enabled" = true
+			}
 		};
 		return result;
 	}
