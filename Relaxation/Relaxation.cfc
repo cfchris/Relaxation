@@ -127,14 +127,6 @@ component
 				variables.HTTPUtil.setResponseHeader('Date', variables.HTTPUtil.formatHTTPDate(httpnow));
 				variables.HTTPUtil.setResponseHeader('Expires', variables.HTTPUtil.formatHTTPDate(httpexpires));
 			}
-			// Find the Origin of the request
-			var headers = variables.HTTPUtil.getRequestHeaders();
-			if ( result.Resource.CrossOrigin.enabled && StructKeyExists( headers, 'Origin') && Len(headers["Origin"]) > 0  ) {
-				variables.HTTPUtil.setResponseHeader('Access-Control-Allow-Credentials', 'true');
-				variables.HTTPUtil.setResponseHeader('Access-Control-Allow-Headers', 'Cookie, Content-Type');
-				variables.HTTPUtil.setResponseHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
-				variables.HTTPUtil.setResponseHeader('Access-Control-Allow-Origin', headers['Origin']);
-			}
 			if ( len(trim(result.Output)) > 0 ) {
 				/* Tell the client we are sending JSON. */
 				variables.HTTPUtil.setResponseContentType('application/json');
@@ -199,6 +191,19 @@ component
 				writeOutput( SerializeJSON(result.Response) );
 			}
 		}
+		// Find the Origin of the request
+		var headers = variables.HTTPUtil.getRequestHeaders();
+		if ( result.Resource.CrossOrigin.enabled ) {
+			// Add "Vary" header so HTTP clients know the response can vary based on the "Origin" header.
+			variables.HTTPUtil.setResponseHeader('Vary', 'Origin');
+			if ( StructKeyExists( headers, 'Origin') && Len(headers["Origin"]) > 0  ) {
+				variables.HTTPUtil.setResponseHeader('Access-Control-Allow-Credentials', 'true');
+				variables.HTTPUtil.setResponseHeader('Access-Control-Allow-Headers', 'Cookie, Content-Type');
+				variables.HTTPUtil.setResponseHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
+				variables.HTTPUtil.setResponseHeader('Access-Control-Allow-Origin', headers['Origin']);
+				variables.HTTPUtil.setResponseHeader('Access-Control-Max-Age', '86400');
+			}
+		}
 		result["Rendered"] = true;
 		return result;
 	}
@@ -246,6 +251,7 @@ component
 		}
 		result.AllowedVerbs = resource.AllowedVerbs;
 		if ( arguments.Verb == "OPTIONS" ) {
+			result.resource.CrossOrigin.enabled = variables.Config.raw.CrossOrigin.enabled;
 			/* They just wanted to know which verbs are supported. We're done. */
 			return result;	
 		}
@@ -415,6 +421,7 @@ component
 		arguments.Path &= ( Right(trim(arguments.Path),1) EQ '/' ? '' : '/' );
 		var result = {
 			"AllowedVerbs" = ""
+			,"CrossOrigin" = variables.Defaults.CrossOrigin
 			,"Located" = false
 			,"Error" = ""
 			,"Path" = ""
