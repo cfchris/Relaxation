@@ -34,6 +34,9 @@ component
 			"enabled" = true
 			,"objectProperty" = "result"
 		}
+		,"SerializeValues" = {
+			"enabled" = true
+		}
 	};
 	
 	/**
@@ -190,7 +193,11 @@ component
 			variables.HTTPUtil.setResponseContentType('application/json');
 			/* Output the response */
 			variables.HTTPUtil.setResponseStatus(result.Response.status, result.Response.statusText);
-			writeOutput( SerializeJSON(result.Response) );
+			if ( result.Resource.Located && !result.Resource.SerializeValues.enabled ) {
+				writeOutput( result.Response.responseText );
+			} else {
+				writeOutput( SerializeJSON(result.Response) );
+			}
 		}
 		result["Rendered"] = true;
 		return result;
@@ -286,11 +293,15 @@ component
 			}
 		}
 		if ( IsDefined("methodResult") ) {
-			if( IsSimpleValue(methodResult) && resource.WrapSimpleValues.enabled ) {
-				/* Wrap the simple value in an object so it's valid JSON */
-				result.Output = SerializeJSON({"#resource.WrapSimpleValues.objectProperty#" = methodResult});
+			if ( resource.SerializeValues.enabled ) {
+				if( IsSimpleValue(methodResult) && resource.WrapSimpleValues.enabled ) {
+					/* Wrap the simple value in an object so it's valid JSON */
+					result.Output = SerializeJSON({"#resource.WrapSimpleValues.objectProperty#" = methodResult});
+				} else {
+					result.Output = SerializeJSON(methodResult);
+				}
 			} else {
-				result.Output = SerializeJSON(methodResult);
+				result.Output = methodResult;
 			}
 			if ( arguments.Verb == "GET" && resource.JSONP.enabled && StructKeyExists(arguments.URLScope, resource.JSONP.callbackParameter) ) {
 				/* Add JSONP "padding". */
@@ -328,6 +339,9 @@ component
 		if ( !StructKeyExists(arguments.Config, "JSONP") ) {
 			arguments.Config["JSONP"] = {};
 		}
+		if ( !StructKeyExists(arguments.Config, "SerializeValues") ) {
+			arguments.Config["SerializeValues"] = {};
+		}
 		if ( !StructKeyExists(arguments.Config, "WrapSimpleValues") ) {
 			arguments.Config["WrapSimpleValues"] = {};
 		}
@@ -335,6 +349,7 @@ component
 		StructAppend(arguments.Config.Arguments.MergeScopes, variables.Defaults.Arguments.MergeScopes, false);
 		StructAppend(arguments.Config.CrossOrigin, variables.Defaults.CrossOrigin, false);
 		StructAppend(arguments.Config.JSONP, variables.Defaults.JSONP, false);
+		StructAppend(arguments.Config.SerializeValues, variables.Defaults.SerializeValues, false);
 		StructAppend(arguments.Config.WrapSimpleValues, variables.Defaults.WrapSimpleValues, false);
 		/* By sorting the keys this way, static patterns should take priority over dynamic ones. */
 		var keyList = ListSort(StructKeyList(Patterns), 'textnocase', 'asc');
@@ -365,6 +380,9 @@ component
 					if ( !StructKeyExists(resource[resourceKey], "JSONP") ) {
 						resource[resourceKey]["JSONP"] = {};
 					}
+					if ( !StructKeyExists(resource[resourceKey], "SerializeValues") ) {
+						resource[resourceKey]["SerializeValues"] = {};
+					}
 					if ( !StructKeyExists(resource[resourceKey], "WrapSimpleValues") ) {
 						resource[resourceKey]["WrapSimpleValues"] = {};
 					}
@@ -380,6 +398,7 @@ component
 						/* Remove callbackParameter if JSONP disabled. */
 						StructDelete(resource[resourceKey].JSONP, "callbackParameter");
 					}
+					StructAppend(resource[resourceKey].SerializeValues, arguments.Config.SerializeValues, false);
 					StructAppend(resource[resourceKey].WrapSimpleValues, arguments.Config.WrapSimpleValues, false);
 				}
 			}
