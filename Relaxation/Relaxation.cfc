@@ -172,6 +172,22 @@ component
 					};
 					break;
 				}
+				case "ConflictError": {
+					result["Response"] = {
+						"status" = 409,
+						"statusText" = 'Conflict',
+						"responseText" = result.ErrorMessage
+					};
+					break;
+				}
+				case "ServerError": {
+					result["Response"] = {
+						"status" = 500,
+						"statusText" = 'Internal Server Error',
+						"responseText" = result.ErrorMessage
+					};
+					break;
+				}
 				default: {
 					result["Response"] = {
 						"status" = 500,
@@ -287,7 +303,7 @@ component
 			result.Success = false;
 			result.ErrorMessage = e.Message;
 			/* Allow called methods to throw special ErrorCodes to get specific HTTP status codes. */
-			if ( ListFindNoCase("NotAuthorized,ResourceNotFound,ClientError", e.ErrorCode) ) {
+			if ( ListFindNoCase("NotAuthorized,ResourceNotFound,ClientError,ConflictError,ServerError", e.ErrorCode) ) {
 				result.Error = e.ErrorCode;
 				return result;
 			}
