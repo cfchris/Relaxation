@@ -34,6 +34,9 @@ component
 			"enabled" = true
 			,"objectProperty" = "result"
 		}
+		,"SerializeValues" = {
+			"enabled" = true
+		}
 	};
 	
 	/**
@@ -124,14 +127,6 @@ component
 				variables.HTTPUtil.setResponseHeader('Date', variables.HTTPUtil.formatHTTPDate(httpnow));
 				variables.HTTPUtil.setResponseHeader('Expires', variables.HTTPUtil.formatHTTPDate(httpexpires));
 			}
-			// Find the Origin of the request
-			var headers = variables.HTTPUtil.getRequestHeaders();
-			if ( result.Resource.CrossOrigin.enabled && StructKeyExists( headers, 'Origin') && Len(headers["Origin"]) > 0  ) {
-				variables.HTTPUtil.setResponseHeader('Access-Control-Allow-Credentials', 'true');
-				variables.HTTPUtil.setResponseHeader('Access-Control-Allow-Headers', 'Cookie, Content-Type');
-				variables.HTTPUtil.setResponseHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
-				variables.HTTPUtil.setResponseHeader('Access-Control-Allow-Origin', headers['Origin']);
-			}
 			if ( len(trim(result.Output)) > 0 ) {
 				/* Tell the client we are sending JSON. */
 				variables.HTTPUtil.setResponseContentType('application/json');
@@ -177,6 +172,22 @@ component
 					};
 					break;
 				}
+				case "ConflictError": {
+					result["Response"] = {
+						"status" = 409,
+						"statusText" = 'Conflict',
+						"responseText" = result.ErrorMessage
+					};
+					break;
+				}
+				case "ServerError": {
+					result["Response"] = {
+						"status" = 500,
+						"statusText" = 'Internal Server Error',
+						"responseText" = result.ErrorMessage
+					};
+					break;
+				}
 				default: {
 					result["Response"] = {
 						"status" = 500,
@@ -190,7 +201,24 @@ component
 			variables.HTTPUtil.setResponseContentType('application/json');
 			/* Output the response */
 			variables.HTTPUtil.setResponseStatus(result.Response.status, result.Response.statusText);
-			writeOutput( SerializeJSON(result.Response) );
+			if ( result.Resource.Located && !result.Resource.SerializeValues.enabled ) {
+				writeOutput( result.Response.responseText );
+			} else {
+				writeOutput( SerializeJSON(result.Response) );
+			}
+		}
+		// Find the Origin of the request
+		var headers = variables.HTTPUtil.getRequestHeaders();
+		if ( result.Resource.CrossOrigin.enabled ) {
+			// Add "Vary" header so HTTP clients know the response can vary based on the "Origin" header.
+			variables.HTTPUtil.setResponseHeader('Vary', 'Origin');
+			if ( StructKeyExists( headers, 'Origin') && Len(headers["Origin"]) > 0  ) {
+				variables.HTTPUtil.setResponseHeader('Access-Control-Allow-Credentials', 'true');
+				variables.HTTPUtil.setResponseHeader('Access-Control-Allow-Headers', 'Cookie, Content-Type');
+				variables.HTTPUtil.setResponseHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
+				variables.HTTPUtil.setResponseHeader('Access-Control-Allow-Origin', headers['Origin']);
+				variables.HTTPUtil.setResponseHeader('Access-Control-Max-Age', '86400');
+			}
 		}
 		result["Rendered"] = true;
 		return result;
@@ -239,6 +267,7 @@ component
 		}
 		result.AllowedVerbs = resource.AllowedVerbs;
 		if ( arguments.Verb == "OPTIONS" ) {
+			result.resource.CrossOrigin.enabled = variables.Config.raw.CrossOrigin.enabled;
 			/* They just wanted to know which verbs are supported. We're done. */
 			return result;	
 		}
@@ -274,7 +303,7 @@ component
 			result.Success = false;
 			result.ErrorMessage = e.Message;
 			/* Allow called methods to throw special ErrorCodes to get specific HTTP status codes. */
-			if ( ListFindNoCase("NotAuthorized,ResourceNotFound,ClientError", e.ErrorCode) ) {
+			if ( ListFindNoCase("NotAuthorized,ResourceNotFound,ClientError,ConflictError,ServerError", e.ErrorCode) ) {
 				result.Error = e.ErrorCode;
 				return result;
 			}
@@ -286,11 +315,15 @@ component
 			}
 		}
 		if ( IsDefined("methodResult") ) {
-			if( IsSimpleValue(methodResult) && resource.WrapSimpleValues.enabled ) {
-				/* Wrap the simple value in an object so it's valid JSON */
-				result.Output = SerializeJSON({"#resource.WrapSimpleValues.objectProperty#" = methodResult});
+			if ( resource.SerializeValues.enabled ) {
+				if( IsSimpleValue(methodResult) && resource.WrapSimpleValues.enabled ) {
+					/* Wrap the simple value in an object so it's valid JSON */
+					result.Output = SerializeJSON({"#resource.WrapSimpleValues.objectProperty#" = methodResult});
+				} else {
+					result.Output = SerializeJSON(methodResult);
+				}
 			} else {
-				result.Output = SerializeJSON(methodResult);
+				result.Output = methodResult;
 			}
 			if ( arguments.Verb == "GET" && resource.JSONP.enabled && StructKeyExists(arguments.URLScope, resource.JSONP.callbackParameter) ) {
 				/* Add JSONP "padding". */
@@ -328,6 +361,9 @@ component
 		if ( !StructKeyExists(arguments.Config, "JSONP") ) {
 			arguments.Config["JSONP"] = {};
 		}
+		if ( !StructKeyExists(arguments.Config, "SerializeValues") ) {
+			arguments.Config["SerializeValues"] = {};
+		}
 		if ( !StructKeyExists(arguments.Config, "WrapSimpleValues") ) {
 			arguments.Config["WrapSimpleValues"] = {};
 		}
@@ -335,6 +371,7 @@ component
 		StructAppend(arguments.Config.Arguments.MergeScopes, variables.Defaults.Arguments.MergeScopes, false);
 		StructAppend(arguments.Config.CrossOrigin, variables.Defaults.CrossOrigin, false);
 		StructAppend(arguments.Config.JSONP, variables.Defaults.JSONP, false);
+		StructAppend(arguments.Config.SerializeValues, variables.Defaults.SerializeValues, false);
 		StructAppend(arguments.Config.WrapSimpleValues, variables.Defaults.WrapSimpleValues, false);
 		/* By sorting the keys this way, static patterns should take priority over dynamic ones. */
 		var keyList = ListSort(StructKeyList(Patterns), 'textnocase', 'asc');
@@ -365,6 +402,9 @@ component
 					if ( !StructKeyExists(resource[resourceKey], "JSONP") ) {
 						resource[resourceKey]["JSONP"] = {};
 					}
+					if ( !StructKeyExists(resource[resourceKey], "SerializeValues") ) {
+						resource[resourceKey]["SerializeValues"] = {};
+					}
 					if ( !StructKeyExists(resource[resourceKey], "WrapSimpleValues") ) {
 						resource[resourceKey]["WrapSimpleValues"] = {};
 					}
@@ -380,6 +420,7 @@ component
 						/* Remove callbackParameter if JSONP disabled. */
 						StructDelete(resource[resourceKey].JSONP, "callbackParameter");
 					}
+					StructAppend(resource[resourceKey].SerializeValues, arguments.Config.SerializeValues, false);
 					StructAppend(resource[resourceKey].WrapSimpleValues, arguments.Config.WrapSimpleValues, false);
 				}
 			}
@@ -396,6 +437,7 @@ component
 		arguments.Path &= ( Right(trim(arguments.Path),1) EQ '/' ? '' : '/' );
 		var result = {
 			"AllowedVerbs" = ""
+			,"CrossOrigin" = variables.Defaults.CrossOrigin
 			,"Located" = false
 			,"Error" = ""
 			,"Path" = ""

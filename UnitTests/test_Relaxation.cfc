@@ -923,6 +923,7 @@ component extends="mxunit.framework.TestCase" {
 	**/
 	private any function getHttpUtil() {
 		var httpUtil = mock();
+		httpUtil.getRequestHeaders().returns({});
 		httpUtil.setResponseHeader('{string}', '{string}').returns();
 		httpUtil.setResponseContentType('{string}').returns();
 		httpUtil.setResponseStatus(400, 'Bad Request').returns();
@@ -970,6 +971,15 @@ component extends="mxunit.framework.TestCase" {
 			,"AllowedVerbs" = ""
 			,"CacheHeaderSeconds" = ""
 		};
+		result["Resource"] = {
+			"Located" = true
+			,"CrossOrigin" = {
+				"enabled" = true
+			}
+			,"SerializeValues" = {
+				"enabled" = true
+			}
+		};
 		return result;
 	}
 	
@@ -985,6 +995,15 @@ component extends="mxunit.framework.TestCase" {
 			,"AllowedVerbs" = ""
 			,"CacheHeaderSeconds" = ""
 		};
+		result["Resource"] = {
+			"Located" = true
+			,"CrossOrigin" = {
+				"enabled" = true
+			}
+			,"SerializeValues" = {
+				"enabled" = true
+			}
+		};
 		return result;
 	}
 	
@@ -999,6 +1018,15 @@ component extends="mxunit.framework.TestCase" {
 			,"ErrorMessage" = "Where's the beef!"
 			,"AllowedVerbs" = ""
 			,"CacheHeaderSeconds" = ""
+		};
+		result["Resource"] = {
+			"Located" = true
+			,"CrossOrigin" = {
+				"enabled" = true
+			}
+			,"SerializeValues" = {
+				"enabled" = true
+			}
 		};
 		return result;
 	}
