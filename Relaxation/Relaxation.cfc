@@ -139,6 +139,14 @@ component
 		} else {
 			/* Provide appropriate error responses. */
 			switch(result.Error) {
+				case "ClientError": {
+					result["Response"] = {
+						"status" = 400,
+						"statusText" = 'Bad Request',
+						"responseText" = result.ErrorMessage
+					};
+					break;
+				}
 				case "NotAuthorized": {
 					result["Response"] = {
 						"status" = 403,
@@ -160,14 +168,6 @@ component
 					result["Response"] = {
 						"status" = 405,
 						"statusText" = 'Method Not Allowed',
-						"responseText" = result.ErrorMessage
-					};
-					break;
-				}
-				case "ClientError": {
-					result["Response"] = {
-						"status" = 400,
-						"statusText" = 'Bad Request',
 						"responseText" = result.ErrorMessage
 					};
 					break;
