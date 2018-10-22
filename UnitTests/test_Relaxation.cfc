@@ -457,19 +457,26 @@ component extends="mxunit.framework.TestCase" {
 	* @hint "I test handleRequest."
 	**/
 	public void function handleRequest_should_work() {
-		var httpUtil = variables.RestFramework.getHTTPUtil();
-		injectMethod(local.httpUtil, this, "doNothing", "setResponseStatus");
-		injectMethod(local.httpUtil, this, "doNothing", "setResponseContentType");
+		var httpUtil = getHttpUtil();
+		variables.RestFramework.setHTTPUtil( httpUtil );
 		/* Test good response */
 		var result = variables.RestFramework.handleRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
 		assertIsStruct(result);
 		assertEquals(true, result.Success);
 		assertEquals(true, result.Rendered);
+		httpUtil.verifyTimes(1).setResponseContentType('application/json');
 		/* Test bad response */
 		result = variables.RestFramework.handleRequest( Path = "/product/this/will/never/work", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
 		assertIsStruct(result);
 		assertEquals(false, result.Success);
 		assertEquals(true, result.Rendered);
+		httpUtil.verifyTimes(2).setResponseContentType('application/json');
+		/* Test good (XML) response */
+		result = variables.RestFramework.handleRequest( Path = "/product/1/xml", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
+		assertIsStruct(result);
+		assertEquals(true, result.Success);
+		assertEquals(true, result.Rendered);
+		httpUtil.verifyTimes(1).setResponseContentType('text/xml');
 	}
 	
 	/**
@@ -698,23 +705,37 @@ component extends="mxunit.framework.TestCase" {
 		/* Mock a known request state to test status code mapping. */
 		InjectMethod( variables.RestFramework, this, 'return400Result', 'processRequest' );
 		/* Call handleRequest. */
-		var result = variables.RestFramework.handleRequest( '/na' );
+		var result400 = variables.RestFramework.handleRequest( '/na' );
 		httpUtil.verify().setResponseStatus(400, 'Bad Request');
-		AssertEquals(return400Result().ErrorMessage, result.response.responseText);
+		AssertEquals(return400Result().ErrorMessage, result400.response.responseText);
 		
 		/* Mock a known request state to test status code mapping. */
 		InjectMethod( variables.RestFramework, this, 'return403Result', 'processRequest' );
 		/* Call handleRequest. */
-		var result = variables.RestFramework.handleRequest( '/na' );
+		var result403 = variables.RestFramework.handleRequest( '/na' );
 		httpUtil.verify().setResponseStatus(403, 'Forbidden');
-		AssertEquals(return403Result().ErrorMessage, result.response.responseText);
+		AssertEquals(return403Result().ErrorMessage, result403.response.responseText);
 		
 		/* Mock a known request state to test status code mapping. */
 		InjectMethod( variables.RestFramework, this, 'return404Result', 'processRequest' );
 		/* Call handleRequest. */
-		var result2 = variables.RestFramework.handleRequest( '/na' );
+		var result404 = variables.RestFramework.handleRequest( '/na' );
 		httpUtil.verify().setResponseStatus(404, 'Not Found');
-		AssertEquals(return404Result().ErrorMessage, result2.response.responseText);
+		AssertEquals(return404Result().ErrorMessage, result404.response.responseText);
+		
+		/* Mock a known request state to test status code mapping. */
+		InjectMethod( variables.RestFramework, this, 'return409Result', 'processRequest' );
+		/* Call handleRequest. */
+		var result409 = variables.RestFramework.handleRequest( '/na' );
+		httpUtil.verify().setResponseStatus(409, 'Conflict');
+		AssertEquals(return409Result().ErrorMessage, result409.response.responseText);
+		
+		/* Mock a known request state to test status code mapping. */
+		InjectMethod( variables.RestFramework, this, 'return500Result', 'processRequest' );
+		/* Call handleRequest. */
+		var result500 = variables.RestFramework.handleRequest( '/na' );
+		httpUtil.verify().setResponseStatus(500, 'Internal Server Error');
+		AssertEquals(return500Result().ErrorMessage, result500.response.responseText);
 	}
 	
 	/**
@@ -925,10 +946,13 @@ component extends="mxunit.framework.TestCase" {
 		var httpUtil = mock();
 		httpUtil.getRequestHeaders().returns({});
 		httpUtil.setResponseHeader('{string}', '{string}').returns();
-		httpUtil.setResponseContentType('{string}').returns();
+		httpUtil.setResponseContentType('application/json').returns();
+		httpUtil.setResponseContentType('text/xml').returns();
 		httpUtil.setResponseStatus(400, 'Bad Request').returns();
 		httpUtil.setResponseStatus(403, 'Forbidden').returns();
 		httpUtil.setResponseStatus(404, 'Not Found').returns();
+		httpUtil.setResponseStatus(409, 'Conflict').returns();
+		httpUtil.setResponseStatus(500, 'Internal Server Error').returns();
 		return httpUtil;
 	}
 	
@@ -1016,6 +1040,54 @@ component extends="mxunit.framework.TestCase" {
 			,"Output" = ""
 			,"Error" = "ResourceNotFound"
 			,"ErrorMessage" = "Where's the beef!"
+			,"AllowedVerbs" = ""
+			,"CacheHeaderSeconds" = ""
+		};
+		result["Resource"] = {
+			"Located" = true
+			,"CrossOrigin" = {
+				"enabled" = true
+			}
+			,"SerializeValues" = {
+				"enabled" = true
+			}
+		};
+		return result;
+	}
+	
+	/**
+	* @hint "I return a result that should trigger a 409."
+	**/
+	private struct function return409Result() {
+		var result = {
+			"Success" = false
+			,"Output" = ""
+			,"Error" = "ConflictError"
+			,"ErrorMessage" = "Conflict!"
+			,"AllowedVerbs" = ""
+			,"CacheHeaderSeconds" = ""
+		};
+		result["Resource"] = {
+			"Located" = true
+			,"CrossOrigin" = {
+				"enabled" = true
+			}
+			,"SerializeValues" = {
+				"enabled" = true
+			}
+		};
+		return result;
+	}
+	
+	/**
+	* @hint "I return a result that should trigger a 500."
+	**/
+	private struct function return500Result() {
+		var result = {
+			"Success" = false
+			,"Output" = ""
+			,"Error" = "ServerError"
+			,"ErrorMessage" = "Something went wrong!"
 			,"AllowedVerbs" = ""
 			,"CacheHeaderSeconds" = ""
 		};

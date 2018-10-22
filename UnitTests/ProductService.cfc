@@ -31,6 +31,22 @@ component displayname="Testing Service" hint="I am a simple service to test requ
 		return {};
 	}
 	
+	/**
+	* @hint "I get XML representing a product by its ID"
+	**/
+	public string function getProductXmlByID( string ProductID ) {
+		var product = getProductByID(ProductID = arguments.ProductID);
+		if (StructIsEmpty(product)) {
+			return '<product></product>';
+		}
+		return '<product>
+			<ProductID>#product.ProductID#</ProductID>
+			<Name>#product.Name#</Name>
+			<Price>#product.Price#</Price>
+			<Vendor>#product.Vendor#</Vendor>
+		</product>';
+	}
+	
 	public string function getProductPrice( string ProductID ) {
 		for (var product in variables.Products) {
 			if (product.ProductID == arguments.ProductID) {
