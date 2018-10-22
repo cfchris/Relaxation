@@ -43,6 +43,15 @@
 				,"Method": "saveProduct"
 			}
 		}
+		,"/product/{ProductID}/xml": {
+			"GET": {
+				"Bean": "ProductService"
+				,"Method": "getProductXmlByID"
+				,"SerializeValues": {
+					"enabled": false
+				}
+			}
+		}
 		,"/product/{ProductID}/colors": {
 			"GET": {
 				"Bean": "ProductService"

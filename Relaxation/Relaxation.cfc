@@ -128,8 +128,13 @@ component
 				variables.HTTPUtil.setResponseHeader('Expires', variables.HTTPUtil.formatHTTPDate(httpexpires));
 			}
 			if ( len(trim(result.Output)) > 0 ) {
-				/* Tell the client we are sending JSON. */
-				variables.HTTPUtil.setResponseContentType('application/json');
+				if ( IsJson(result.Output) ) {
+					/* Tell the client we are responding with JSON. */
+					variables.HTTPUtil.setResponseContentType('application/json');
+				} else if ( IsXml(result.Output) ) {
+					/* Tell the client we are responding with XML. */
+					variables.HTTPUtil.setResponseContentType('text/xml');
+				}
 				/* Give'em what they asked for. */
 				writeOutput( result.Output );
 			} else {
@@ -314,6 +319,7 @@ component
 				rethrow;
 			}
 		}
+
 		if ( IsDefined("methodResult") ) {
 			if ( resource.SerializeValues.enabled ) {
 				if( IsSimpleValue(methodResult) && resource.WrapSimpleValues.enabled ) {

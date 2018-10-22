@@ -457,19 +457,26 @@ component extends="mxunit.framework.TestCase" {
 	* @hint "I test handleRequest."
 	**/
 	public void function handleRequest_should_work() {
-		var httpUtil = variables.RestFramework.getHTTPUtil();
-		injectMethod(local.httpUtil, this, "doNothing", "setResponseStatus");
-		injectMethod(local.httpUtil, this, "doNothing", "setResponseContentType");
+		var httpUtil = getHttpUtil();
+		variables.RestFramework.setHTTPUtil( httpUtil );
 		/* Test good response */
 		var result = variables.RestFramework.handleRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
 		assertIsStruct(result);
 		assertEquals(true, result.Success);
 		assertEquals(true, result.Rendered);
+		httpUtil.verifyTimes(1).setResponseContentType('application/json');
 		/* Test bad response */
 		result = variables.RestFramework.handleRequest( Path = "/product/this/will/never/work", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
 		assertIsStruct(result);
 		assertEquals(false, result.Success);
 		assertEquals(true, result.Rendered);
+		httpUtil.verifyTimes(2).setResponseContentType('application/json');
+		/* Test good (XML) response */
+		result = variables.RestFramework.handleRequest( Path = "/product/1/xml", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
+		assertIsStruct(result);
+		assertEquals(true, result.Success);
+		assertEquals(true, result.Rendered);
+		httpUtil.verifyTimes(1).setResponseContentType('text/xml');
 	}
 	
 	/**
@@ -939,7 +946,8 @@ component extends="mxunit.framework.TestCase" {
 		var httpUtil = mock();
 		httpUtil.getRequestHeaders().returns({});
 		httpUtil.setResponseHeader('{string}', '{string}').returns();
-		httpUtil.setResponseContentType('{string}').returns();
+		httpUtil.setResponseContentType('application/json').returns();
+		httpUtil.setResponseContentType('text/xml').returns();
 		httpUtil.setResponseStatus(400, 'Bad Request').returns();
 		httpUtil.setResponseStatus(403, 'Forbidden').returns();
 		httpUtil.setResponseStatus(404, 'Not Found').returns();
