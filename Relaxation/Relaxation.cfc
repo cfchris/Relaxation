@@ -293,7 +293,7 @@ component
 			if ( !authorize(authArg) ) {
 				result.Success = false;
 				result.Error = "NotAuthorized";
-				result.ErrorMessage = "The user does not have access to this resource";
+				result.ErrorMessage = "You are not authorized to do this";
 				return result;
 			}
 		}
