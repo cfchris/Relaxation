@@ -276,33 +276,34 @@ component
 			/* They just wanted to know which verbs are supported. We're done. */
 			return result;	
 		}
+		result.CacheHeaderSeconds = StructKeyExists(resource, "CacheHeaderSeconds") ? resource.CacheHeaderSeconds : "";
+		/* Gather the arguments needed to call the method (and for auth methods). */
+		var args = gatherRequestArguments( argumentCollection = arguments, ResourceMatch = resource);
 		var authArg = {
+			"CallArgs" = args,
 			"Bean" = resource.Bean,
 			"Method" = resource.Method,
 			"Path" = resource.Path,
 			"Pattern" = resource.Pattern,
 			"Verb" = resource.Verb
 		};
-		if ( !IsNull(getBasicAuthCheckMethod()) ) {
-			if ( !basicAuthCredentialsPass( authArg ) ) {
-				variables.HTTPUtil.promptForBasicAuth( "REST API" );
-			}
-		}
-		if ( !IsNull(getAuthorizationMethod()) ) {
-			var authorize = getAuthorizationMethod();
-			if ( !authorize(authArg) ) {
-				result.Success = false;
-				result.Error = "NotAuthorized";
-				result.ErrorMessage = "You are not authorized to do this";
-				return result;
-			}
-		}
-		result.CacheHeaderSeconds = StructKeyExists(resource, "CacheHeaderSeconds") ? resource.CacheHeaderSeconds : "";
-		var bean = getMappedBean(resource.Bean);
-		/* Gather the arguments needed to call the method. */
-		var args = gatherRequestArguments( argumentCollection = arguments, ResourceMatch = resource);
 		/* Now call the method on the bean! */
 		try {
+			if ( !IsNull(getBasicAuthCheckMethod()) ) {
+				if ( !basicAuthCredentialsPass( authArg ) ) {
+					variables.HTTPUtil.promptForBasicAuth( "REST API" );
+				}
+			}
+			if ( !IsNull(getAuthorizationMethod()) ) {
+				var authorize = getAuthorizationMethod();
+				if ( !authorize(authArg) ) {
+					result.Success = false;
+					result.Error = "NotAuthorized";
+					result.ErrorMessage = "You are not authorized to do this";
+					return result;
+				}
+			}
+			var bean = getMappedBean(resource.Bean);
 			var methodResult = variables.cfmlFunctions.cfmlInvoke(bean, resource.Method, args);
 		} catch (Any e) {
 			result.Success = false;

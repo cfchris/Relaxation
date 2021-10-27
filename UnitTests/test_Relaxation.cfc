@@ -202,18 +202,24 @@ component extends="mxunit.framework.TestCase" {
 		
 		/* First test without an Authorization Method. */
 		var result = variables.RestFramework.processRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
-		assertEquals(true, result.Success);
+		assertTrue(result.success, "Test w/ no auth should have returned true");
 		
-		/* Second, test with an auth method that WILL authorize. */
+		/* Second test with an auth method that WILL authorize. */
 		variables.RestFramework.setAuthorizationMethod( returnTrue );
 		var result = variables.RestFramework.processRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
-		assertEquals(true, result.Success);
+		assertTrue(result.success, "Test w/ passing auth should have returned true");
 		
-		/* Third, test with an auth method that WON'T authorize. */
+		/* Third test with an auth method that WON'T authorize. */
 		variables.RestFramework.setAuthorizationMethod( returnFalse );
 		var result = variables.RestFramework.processRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
-		assertEquals(false, result.Success);
+		assertFalse(result.success, "Test w/ failing auth should have returned false");
 		assertEquals("NotAuthorized", result.Error);
+
+		/* Fourth test with an auth method that throws Relaxation error code (ResourceNotFound) */
+		variables.RestFramework.setAuthorizationMethod( throwResourceNotFound );
+		var result = variables.RestFramework.processRequest( Path = "/product/1", Verb = "GET", RequestBody = "", URLScope = {}, FormScope = {});
+		assertFalse(result.success, "Test w/ auth that throws should have returned false");
+		assertEquals("ResourceNotFound", result.Error);
 	}
 	
 	/**
@@ -1115,6 +1121,17 @@ component extends="mxunit.framework.TestCase" {
 	**/
 	private boolean function returnTrue() {
 		return true;
+	}
+	
+	/**
+	* @hint "I throw error code ResourceNotFound."
+	**/
+	private boolean function throwResourceNotFound() {
+		Throw(
+			Type = "Relaxation.Testing",
+			ErrorCode = "ResourceNotFound",
+			Message = "For testing"
+		);
 	}
 	
 	/**
