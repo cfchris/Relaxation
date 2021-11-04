@@ -309,7 +309,7 @@ component
 			result.Success = false;
 			result.ErrorMessage = e.Message;
 			/* Allow called methods to throw special ErrorCodes to get specific HTTP status codes. */
-			if ( ListFindNoCase("NotAuthorized,ResourceNotFound,ClientError,ConflictError,ServerError", e.ErrorCode) ) {
+			if ( ListFindNoCase("NotAuthorized,ResourceNotFound,ClientError,ConflictError,ServerError,VerbNotFound", e.ErrorCode) ) {
 				result.Error = e.ErrorCode;
 				return result;
 			}
