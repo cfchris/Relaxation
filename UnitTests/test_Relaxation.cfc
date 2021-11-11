@@ -39,6 +39,7 @@ component extends="mxunit.framework.TestCase" {
 		
 		AssertIsStruct(config.Resources[1].PUT.Arguments);
 		AssertEquals('Payload', config.Resources[1].PUT.Arguments.PayloadArgument);
+		AssertEquals('PayloadRaw', config.Resources[1].PUT.Arguments.PayloadRawArgument);
 		AssertTrue(config.Resources[1].PUT.Arguments.MergeScopes.Path);
 		AssertTrue(config.Resources[1].PUT.Arguments.MergeScopes.Payload);
 		AssertTrue(config.Resources[1].PUT.Arguments.MergeScopes.URL);
@@ -52,6 +53,7 @@ component extends="mxunit.framework.TestCase" {
 		var testConfig = '{
 			"Arguments": {
 				"PayloadArgument": "TestPayloadArg"
+				,"PayloadRawArgument": "TestPayloadRawArg"
 				,"MergeScopes": {
 					"Path": false
 					,"Payload": false
@@ -73,6 +75,7 @@ component extends="mxunit.framework.TestCase" {
 		
 		AssertIsStruct(config.Resources[1].PUT.Arguments);
 		AssertEquals('TestPayloadArg', config.Resources[1].PUT.Arguments.PayloadArgument);
+		AssertEquals('TestPayloadRawArg', config.Resources[1].PUT.Arguments.PayloadRawArgument);
 		AssertFalse(config.Resources[1].PUT.Arguments.MergeScopes.Path);
 		AssertFalse(config.Resources[1].PUT.Arguments.MergeScopes.Payload);
 		AssertFalse(config.Resources[1].PUT.Arguments.MergeScopes.URL);
@@ -86,6 +89,7 @@ component extends="mxunit.framework.TestCase" {
 		var testConfig = '{
 			"Arguments": {
 				"PayloadArgument": "TestPayloadArg"
+				,"PayloadRawArgument": "TestPayloadRawArg"
 				,"MergeScopes": {
 					"Path": true
 					,"Payload": true
@@ -99,6 +103,7 @@ component extends="mxunit.framework.TestCase" {
 						,"Method": "updateProduct"
 						,"Arguments": {
 							"PayloadArgument": "Product"
+							,"PayloadRawArgument": "ProductJson"
 							,"MergeScopes": {
 								"Payload": false
 							}
@@ -112,6 +117,7 @@ component extends="mxunit.framework.TestCase" {
 		
 		AssertIsStruct(config.Resources[1].PUT.Arguments);
 		AssertEquals('Product', config.Resources[1].PUT.Arguments.PayloadArgument);
+		AssertEquals('ProductJson', config.Resources[1].PUT.Arguments.PayloadRawArgument);
 		AssertTrue(config.Resources[1].PUT.Arguments.MergeScopes.Path);
 		AssertFalse(config.Resources[1].PUT.Arguments.MergeScopes.Payload);
 		AssertTrue(config.Resources[1].PUT.Arguments.MergeScopes.URL);
@@ -190,9 +196,10 @@ component extends="mxunit.framework.TestCase" {
 		var args = relaxationInstance.gatherRequestArguments(ResourceMatch = Match, RequestBody = '{"isActive":true, "color":"red"}', URLScope = {"urlArg":1}, FormScope = {"formArg":2} );
 		AssertIsStruct(args);
 		/* The config for this resource+verb is to NOT merge any scopes. */
-		AssertEquals(2, ListLen(StructKeyList(args)));
+		AssertEquals(3, ListLen(StructKeyList(args)));
 		AssertTrue(ListFindNoCase(StructKeyList(args),"ArgumentSources"));
 		AssertTrue(ListFindNoCase(StructKeyList(args),"Payload"));
+		AssertTrue(ListFindNoCase(StructKeyList(args),"PayloadRaw"));
 	}
 	
 	/**
@@ -616,6 +623,7 @@ component extends="mxunit.framework.TestCase" {
 						,"Method": "addProduct"
 						,"Arguments": {
 							"PayloadArgument": "NewProduct"
+							,"PayloadRawArgument": "NewProductJson"
 						}
 					}
 				}
@@ -629,6 +637,7 @@ component extends="mxunit.framework.TestCase" {
 						,"Method": "updateProduct"
 						,"Arguments": {
 							"PayloadArgument": "ExistingProduct"
+							,"PayloadRawArgument": "ExistingProductJson"
 						}
 					}
 				}
@@ -655,8 +664,11 @@ component extends="mxunit.framework.TestCase" {
 		AssertIsStruct(args);
 		AssertFalse(StructKeyExists(args,"Payload"), "Payload key found. It should not be there.");
 		AssertTrue(StructKeyExists(args,"NewProduct"), "Could not find expected arg key.");
+		AssertFalse(StructKeyExists(args,"PayloadRaw"), "PayloadRaw key found. It should not be there.");
+		AssertTrue(StructKeyExists(args,"NewProductJson"), "Could not find expected raw arg key.");
 		AssertIsStruct(args.NewProduct);
 		AssertEquals("red", args.NewProduct.color);
+		AssertEquals('{"isActive":true, "color":"red"}', args.NewProductJson);
 		
 		/* Test product item PUT arg mapping. */
 		var Match = relaxationInstance.findResourceConfig("/product/123","PUT");
@@ -664,8 +676,11 @@ component extends="mxunit.framework.TestCase" {
 		AssertIsStruct(args);
 		AssertFalse(StructKeyExists(args,"Payload"), "Payload key found. It should not be there.");
 		AssertTrue(StructKeyExists(args,"ExistingProduct"), "Could not find expected arg key.");
+		AssertFalse(StructKeyExists(args,"PayloadRaw"), "PayloadRaw key found. It should not be there.");
+		AssertTrue(StructKeyExists(args,"ExistingProductJson"), "Could not find expected raw arg key.");
 		AssertIsStruct(args.ExistingProduct);
 		AssertEquals("red", args.ExistingProduct.color);
+		AssertEquals('{"isActive":true, "color":"red"}', args.ExistingProductJson);
 	}
 	
 	/**

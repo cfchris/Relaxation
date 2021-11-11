@@ -16,6 +16,7 @@ component
 	variables.Defaults = {
 		"Arguments" = {
 			"PayloadArgument" = "Payload"
+			,"PayloadRawArgument" = "PayloadRaw"
 			,"MergeScopes" = {
 				"Path" = true
 				,"Payload" = true
@@ -515,6 +516,8 @@ component
 		};
 		/* Insert payload with specified (or default) argument name. */
 		args[arguments.ResourceMatch.Arguments.PayloadArgument] = Payload;
+		/* Insert raw payload with specified (or default) argument name. */
+		args[arguments.ResourceMatch.Arguments.PayloadRawArgument] = trim(arguments.RequestBody);
 		/* Coalesce all the sources together. Use "overwrite" false and put the highest priority first.  */
 		if ( arguments.ResourceMatch.Arguments.MergeScopes.Path ) {
 			StructAppend(args, PathValues, false);	/* Path 1st */
