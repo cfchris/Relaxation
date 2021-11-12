@@ -247,7 +247,7 @@ component
 		if ( isNull(arguments.FormScope) && isDefined("FORM") && isStruct(FORM) ) {
 			arguments.FormScope = FORM;
 		}
-		if ( isNull(arguments.RequestBody) && isJSON(trim(ToString(GetHttpRequestData().Content))) ) {
+		if ( isNull(arguments.RequestBody) && len(trim(ToString(GetHttpRequestData().Content))) ) {
 			arguments.RequestBody = trim(ToString(GetHttpRequestData().Content));
 		}
 		var result = {

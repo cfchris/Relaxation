@@ -681,6 +681,13 @@ component extends="mxunit.framework.TestCase" {
 		AssertIsStruct(args.ExistingProduct);
 		AssertEquals("red", args.ExistingProduct.color);
 		AssertEquals('{"isActive":true, "color":"red"}', args.ExistingProductJson);
+		
+		/* Test product (non-JSON) item PUT arg mapping. */
+		var Match = relaxationInstance.findResourceConfig("/product/123","PUT");
+		var args = relaxationInstance.gatherRequestArguments(ResourceMatch = Match, RequestBody = 'some non JSON stuff', URLScope = {}, FormScope = {} );
+		AssertIsStruct(args);
+		AssertTrue(StructKeyExists(args,"ExistingProductJson"), "Could not find expected raw arg key.");
+		AssertEquals('some non JSON stuff', args.ExistingProductJson);
 	}
 	
 	/**
