@@ -389,6 +389,13 @@ component extends="mxunit.framework.TestCase" {
 		assertEquals("ProductService", match.Bean);
 		assertEquals("getProductColors", match.Method);
 		assertEquals("GET,OPTIONS", match.AllowedVerbs);
+		/* Test static URL (w/ extension). */
+		var match = variables.RestFramework.findResourceConfig( "/product/colors.json", "GET" );
+		assertIsStruct(match);
+		assertEquals(true, match.located);
+		assertEquals("ProductService", match.Bean);
+		assertEquals("getProductColors", match.Method);
+		assertEquals("GET,OPTIONS", match.AllowedVerbs);
 		/* Test dynamic URL. */
 		var match = variables.RestFramework.findResourceConfig( "/product/1", "GET" );
 		assertIsStruct(match);

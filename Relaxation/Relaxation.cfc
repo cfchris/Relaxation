@@ -441,6 +441,8 @@ component
 	* @hint "Give an resource path and verb, I will return the config object. This will contain everything that was in the (GET,PUT,POST,etc) key in the config."
 	**/
 	private struct function findResourceConfig( required string Path, required string Verb ) {
+		/* Remove extensions (e.g. .json, .xml, etc) */
+		arguments.Path = ReReplaceNoCase(arguments.Path, "\.[a-z]+$", "");
 		/* Add trailing slash to make matching easier. */
 		arguments.Path &= ( Right(trim(arguments.Path),1) EQ '/' ? '' : '/' );
 		var result = {
