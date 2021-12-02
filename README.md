@@ -19,7 +19,7 @@ If you want to know more, checkout the [QuickStart Guide](https://github.com/cfc
 
 ## Requirements
 
-I have tested Relaxation on CF 9 and 10 and Railo 4. I suspect it _might_ work on CF8. But, it will likely not work on older versions of CF because it is written primarily in cfscript.
+I have tested Relaxation on ACF (9 > 2016) and Railo 4. I suspect it _might_ work on CF8. But, it will likely not work on older versions of CF because it is written primarily in cfscript.
 
 There are no external dependencies to use Relaxation.
 
