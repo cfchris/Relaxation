@@ -16,6 +16,7 @@ component
 	variables.Defaults = {
 		"Arguments" = {
 			"PayloadArgument" = "Payload"
+			,"PayloadRawArgument" = "PayloadRaw"
 			,"MergeScopes" = {
 				"Path" = true
 				,"Payload" = true
@@ -246,7 +247,7 @@ component
 		if ( isNull(arguments.FormScope) && isDefined("FORM") && isStruct(FORM) ) {
 			arguments.FormScope = FORM;
 		}
-		if ( isNull(arguments.RequestBody) && isJSON(trim(ToString(GetHttpRequestData().Content))) ) {
+		if ( isNull(arguments.RequestBody) && len(trim(ToString(GetHttpRequestData().Content))) ) {
 			arguments.RequestBody = trim(ToString(GetHttpRequestData().Content));
 		}
 		var result = {
@@ -276,39 +277,40 @@ component
 			/* They just wanted to know which verbs are supported. We're done. */
 			return result;	
 		}
+		result.CacheHeaderSeconds = StructKeyExists(resource, "CacheHeaderSeconds") ? resource.CacheHeaderSeconds : "";
+		/* Gather the arguments needed to call the method (and for auth methods). */
+		var args = gatherRequestArguments( argumentCollection = arguments, ResourceMatch = resource);
 		var authArg = {
+			"CallArgs" = args,
 			"Bean" = resource.Bean,
 			"Method" = resource.Method,
 			"Path" = resource.Path,
 			"Pattern" = resource.Pattern,
 			"Verb" = resource.Verb
 		};
-		if ( !IsNull(getBasicAuthCheckMethod()) ) {
-			if ( !basicAuthCredentialsPass( authArg ) ) {
-				variables.HTTPUtil.promptForBasicAuth( "REST API" );
-			}
-		}
-		if ( !IsNull(getAuthorizationMethod()) ) {
-			var authorize = getAuthorizationMethod();
-			if ( !authorize(authArg) ) {
-				result.Success = false;
-				result.Error = "NotAuthorized";
-				result.ErrorMessage = "You are not authorized to do this";
-				return result;
-			}
-		}
-		result.CacheHeaderSeconds = StructKeyExists(resource, "CacheHeaderSeconds") ? resource.CacheHeaderSeconds : "";
-		var bean = getMappedBean(resource.Bean);
-		/* Gather the arguments needed to call the method. */
-		var args = gatherRequestArguments( argumentCollection = arguments, ResourceMatch = resource);
 		/* Now call the method on the bean! */
 		try {
+			if ( !IsNull(getBasicAuthCheckMethod()) ) {
+				if ( !basicAuthCredentialsPass( authArg ) ) {
+					variables.HTTPUtil.promptForBasicAuth( "REST API" );
+				}
+			}
+			if ( !IsNull(getAuthorizationMethod()) ) {
+				var authorize = getAuthorizationMethod();
+				if ( !authorize(authArg) ) {
+					result.Success = false;
+					result.Error = "NotAuthorized";
+					result.ErrorMessage = "You are not authorized to do this";
+					return result;
+				}
+			}
+			var bean = getMappedBean(resource.Bean);
 			var methodResult = variables.cfmlFunctions.cfmlInvoke(bean, resource.Method, args);
 		} catch (Any e) {
 			result.Success = false;
 			result.ErrorMessage = e.Message;
 			/* Allow called methods to throw special ErrorCodes to get specific HTTP status codes. */
-			if ( ListFindNoCase("NotAuthorized,ResourceNotFound,ClientError,ConflictError,ServerError", e.ErrorCode) ) {
+			if ( ListFindNoCase("NotAuthorized,ResourceNotFound,ClientError,ConflictError,ServerError,VerbNotFound", e.ErrorCode) ) {
 				result.Error = e.ErrorCode;
 				return result;
 			}
@@ -439,6 +441,8 @@ component
 	* @hint "Give an resource path and verb, I will return the config object. This will contain everything that was in the (GET,PUT,POST,etc) key in the config."
 	**/
 	private struct function findResourceConfig( required string Path, required string Verb ) {
+		/* Remove extensions (e.g. .json, .xml, etc) */
+		arguments.Path = ReReplaceNoCase(arguments.Path, "\.[a-z]+$", "");
 		/* Add trailing slash to make matching easier. */
 		arguments.Path &= ( Right(trim(arguments.Path),1) EQ '/' ? '' : '/' );
 		var result = {
@@ -514,6 +518,8 @@ component
 		};
 		/* Insert payload with specified (or default) argument name. */
 		args[arguments.ResourceMatch.Arguments.PayloadArgument] = Payload;
+		/* Insert raw payload with specified (or default) argument name. */
+		args[arguments.ResourceMatch.Arguments.PayloadRawArgument] = trim(arguments.RequestBody);
 		/* Coalesce all the sources together. Use "overwrite" false and put the highest priority first.  */
 		if ( arguments.ResourceMatch.Arguments.MergeScopes.Path ) {
 			StructAppend(args, PathValues, false);	/* Path 1st */
