@@ -186,6 +186,14 @@ component
 					};
 					break;
 				}
+				case "TooManyRequests": {
+					result["Response"] = {
+						"status" = 429,
+						"statusText" = 'Too Many Requests',
+						"responseText" = result.ErrorMessage
+					};
+					break;
+				}
 				case "ServerError": {
 					result["Response"] = {
 						"status" = 500,

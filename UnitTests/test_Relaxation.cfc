@@ -766,6 +766,13 @@ component extends="mxunit.framework.TestCase" {
 		AssertEquals(return409Result().ErrorMessage, result409.response.responseText);
 		
 		/* Mock a known request state to test status code mapping. */
+		InjectMethod( variables.RestFramework, this, 'return429Result', 'processRequest' );
+		/* Call handleRequest. */
+		var result429 = variables.RestFramework.handleRequest( '/na' );
+		httpUtil.verify().setResponseStatus(429, 'Too Many Requests');
+		AssertEquals(return429Result().ErrorMessage, result429.response.responseText);
+		
+		/* Mock a known request state to test status code mapping. */
 		InjectMethod( variables.RestFramework, this, 'return500Result', 'processRequest' );
 		/* Call handleRequest. */
 		var result500 = variables.RestFramework.handleRequest( '/na' );
@@ -987,6 +994,7 @@ component extends="mxunit.framework.TestCase" {
 		httpUtil.setResponseStatus(403, 'Forbidden').returns();
 		httpUtil.setResponseStatus(404, 'Not Found').returns();
 		httpUtil.setResponseStatus(409, 'Conflict').returns();
+		httpUtil.setResponseStatus(429, 'Too Many Requests').returns();
 		httpUtil.setResponseStatus(500, 'Internal Server Error').returns();
 		return httpUtil;
 	}
@@ -1099,6 +1107,30 @@ component extends="mxunit.framework.TestCase" {
 			,"Output" = ""
 			,"Error" = "ConflictError"
 			,"ErrorMessage" = "Conflict!"
+			,"AllowedVerbs" = ""
+			,"CacheHeaderSeconds" = ""
+		};
+		result["Resource"] = {
+			"Located" = true
+			,"CrossOrigin" = {
+				"enabled" = true
+			}
+			,"SerializeValues" = {
+				"enabled" = true
+			}
+		};
+		return result;
+	}
+	
+	/**
+	* @hint "I return a result that should trigger a 429."
+	**/
+	private struct function return429Result() {
+		var result = {
+			"Success" = false
+			,"Output" = ""
+			,"Error" = "TooManyRequests"
+			,"ErrorMessage" = "Too many requests!"
 			,"AllowedVerbs" = ""
 			,"CacheHeaderSeconds" = ""
 		};
